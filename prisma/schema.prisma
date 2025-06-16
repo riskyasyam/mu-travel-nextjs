@@ -13,11 +13,37 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Model untuk Paket Umroh (tetap ada)
+// ---> UBAH MODEL PAKET MENJADI SEPERTI INI <---
 model Paket {
+  id                  Int      @id @default(autoincrement())
+  namaPaket           String
+  fotoUrl             String   @db.Text
+  deskripsi           String   @db.Text
+  harga               Int
+  durasi              Int      // dalam hari
+  tanggalKeberangkatan DateTime
+  hotelMadinah        String
+  hotelMakkah         String
+  pesawat             String
+  ratingHotelMakkah   Int      @default(5)
+  ratingHotelMadinah  Int      @default(5)
+  sisaKursi           Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+// ---> TAMBAHKAN MODEL-MODEL BARU INI <---
+model Dokumentasi {
   id        Int      @id @default(autoincrement())
-  name      String
-  price     Int
+  fotoUrl   String   @db.Text
+  deskripsi String?  // Deskripsi opsional
+  createdAt DateTime @default(now())
+}
+
+model Testimoni {
+  id        Int      @id @default(autoincrement())
+  fotoUrl   String?  @db.Text
+  videoUrl  String?  @db.Text
   createdAt DateTime @default(now())
 }
 

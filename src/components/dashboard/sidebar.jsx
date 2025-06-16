@@ -3,11 +3,12 @@ import { logout } from '@/app/lib/actions'; // <-- 1. Impor action logout
 
 const Sidebar = () => {
   const menus = [
-    { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
-    { name: 'Paket Umroh', href: '/dashboard/paket', icon: '🕋' },
-    { name: 'Jamaah', href: '/dashboard/jamaah', icon: '👥' },
-    { name: 'Pengaturan', href: '/dashboard/pengaturan', icon: '⚙️' },
-  ];
+  { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
+  { name: 'Paket Umroh', href: '/dashboard/paket', icon: '🕋' },
+  { name: 'Dokumentasi', href: '/dashboard/dokumentasi', icon: '🖼️' },
+  { name: 'Testimoni', href: '/dashboard/testimoni', icon: '⭐' },
+  { name: 'Pengaturan', href: '/dashboard/pengaturan', icon: '⚙️' },
+];
 
   return (
     <aside className="w-64 bg-slate-800 text-slate-100 h-screen flex flex-col sticky top-0">
