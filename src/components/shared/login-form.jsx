@@ -37,7 +37,7 @@ export default function LoginForm() {
               name="email"
               type="email"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="anda@email.com"
             />
           </div>
@@ -56,7 +56,7 @@ export default function LoginForm() {
               name="password"
               type="password"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="••••••••"
             />
           </div>
