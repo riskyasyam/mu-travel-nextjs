@@ -1,37 +1,38 @@
-const DashboardPage = () => {
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+export default async function DashboardPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold text-slate-800 mb-6">
-        Selamat Datang, Admin!
-      </h1>
+    <div className="space-y-6">
+      {/* Placeholder untuk Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Credits Usage Last Year</CardTitle>
+          <CardDescription>149,758</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 bg-gray-200 rounded-md flex items-center justify-center">
+            <p className="text-gray-500">[Placeholder untuk Grafik Chart]</p>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Contoh Kartu Statistik */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-slate-600">Total Paket Aktif</h3>
-          <p className="text-3xl font-bold text-blue-600 mt-2">12</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-slate-600">Total Jamaah</h3>
-          <p className="text-3xl font-bold text-green-600 mt-2">150</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-slate-600">Pendaftaran Baru</h3>
-          <p className="text-3xl font-bold text-yellow-600 mt-2">5</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-slate-600">Pesan Masuk</h3>
-          <p className="text-3xl font-bold text-red-600 mt-2">3</p>
-        </div>
-      </div>
-
-      {/* Konten dashboard lainnya bisa ditambahkan di sini */}
-      <div className="mt-8 bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-lg font-semibold text-slate-600">Aktivitas Terbaru</h3>
-        <p className="mt-2 text-slate-500">[Daftar aktivitas terbaru akan muncul di sini]</p>
-      </div>
+      {/* Placeholder untuk Tabel */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Users List</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-96 bg-gray-200 rounded-md flex items-center justify-center">
+            <p className="text-gray-500">[Placeholder untuk Tabel Pengguna]</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
-
-export default DashboardPage;

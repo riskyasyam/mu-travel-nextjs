@@ -211,6 +211,19 @@ export async function deleteDokumentasi(id) {
   revalidatePath('/dashboard/dokumentasi');
 }
 
+export async function getPaketLandingPage() {
+  try {
+    const paket = await prisma.paket.findMany({
+      orderBy: { tanggalKeberangkatan: 'asc' },
+      take: 6, // Ambil 6 paket terdekat
+    });
+    return paket;
+  } catch (error) {
+    console.error("Gagal mengambil data paket:", error);
+    return []; // Kembalikan array kosong jika gagal
+  }
+}
+
 // FUNGSI UNTUK MENGAMBIL SATU PAKET BERDASARKAN ID
 export async function getPaketById(id) {
   const paket = await prisma.paket.findUnique({
