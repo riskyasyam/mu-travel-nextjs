@@ -39,9 +39,9 @@ const AdvantagesSection = () => {
         
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
           <p className="font-serif text-lg font-medium bg-gradient-to-r from-[#D4802A] to-[#EAC84C] bg-clip-text text-transparent">
-            Kenapa sih harus dengan kami?
+            KENAPA HARUS DENGAN KAMI?
           </p>
-          <h2 className="font-['var(--font-mermaid)'] antialiased mt-2 text-4xl md:text-5xl font-extrabold text-gray-900">
+          <h2 className="mt-2 text-4xl md:text-5xl font-extrabold text-gray-900">
             Keuntungan Travel Kami
           </h2>
         </motion.div>

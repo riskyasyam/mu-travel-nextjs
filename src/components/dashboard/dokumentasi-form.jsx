@@ -1,6 +1,11 @@
 'use client';
+
 import { createDokumentasi, updateDokumentasi } from "@/app/lib/actions";
 import Image from "next/image";
+import { Button } from "@/components/ui/button"; // Impor komponen ShadCN
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function DokumentasiForm({ dokumentasi }) {
   const isEditMode = Boolean(dokumentasi);
@@ -8,43 +13,56 @@ export default function DokumentasiForm({ dokumentasi }) {
 
   return (
     <form action={action} encType="multipart/form-data" className="space-y-6">
-      <div>
-        <label htmlFor="foto" className="block text-sm font-medium text-gray-700">
+      
+      {/* Input untuk Foto */}
+      <div className="space-y-2">
+        <Label htmlFor="foto">
           {isEditMode ? 'Ganti Foto' : 'Upload Foto'}
-        </label>
-        <input
+        </Label>
+        <Input
           type="file"
           id="foto"
           name="foto"
-          className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          // ShadCN Input sudah memiliki style dasar untuk file, kita bisa tambahkan kustomisasi jika perlu
+          className="cursor-pointer"
           required={!isEditMode}
         />
         {isEditMode && <input type="hidden" name="fotoUrlLama" value={dokumentasi.fotoUrl} />}
       </div>
 
+      {/* Tampilkan preview foto jika mode Edit */}
       {isEditMode && dokumentasi.fotoUrl && (
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-2">Foto Saat Ini:</p>
-          <Image src={dokumentasi.fotoUrl} alt="Preview" width={150} height={100} className="rounded-md object-cover" />
+        <div className="space-y-2">
+          <Label>Foto Saat Ini:</Label>
+          <div className="mt-2">
+            <Image 
+              src={dokumentasi.fotoUrl} 
+              alt="Preview" 
+              width={150} 
+              height={100} 
+              className="rounded-md object-cover border p-2" 
+            />
+          </div>
         </div>
       )}
 
-      <div>
-        <label htmlFor="deskripsi" className="block text-sm font-medium text-gray-700">Deskripsi (Opsional)</label>
-        <textarea
+      {/* Input untuk Deskripsi */}
+      <div className="space-y-2">
+        <Label htmlFor="deskripsi">Deskripsi (Opsional)</Label>
+        <Textarea
           id="deskripsi"
           name="deskripsi"
           rows="4"
           defaultValue={dokumentasi?.deskripsi || ''}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
-          placeholder="Contoh: Suasana di Masjid Nabawi"
-        ></textarea>
+          placeholder="Contoh: Suasana jamaah di Masjid Nabawi"
+        />
       </div>
 
-      <div className="flex justify-end">
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700">
+      {/* Tombol Aksi */}
+      <div className="flex justify-end pt-4">
+        <Button type="submit">
           {isEditMode ? 'Update' : 'Simpan'}
-        </button>
+        </Button>
       </div>
     </form>
   );

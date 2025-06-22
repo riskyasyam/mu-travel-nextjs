@@ -30,7 +30,7 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative h-screen flex items-center justify-center text-white">
+    <section id="home" className="relative h-screen flex items-center justify-center text-white">
       {/* Background Image */}
       <Image
         src="/images/background-hero.png"
@@ -71,9 +71,13 @@ const HeroSection = () => {
           MU TRAVEL CABANG BALIKPAPAN
         </motion.p>
 
-        <motion.div variants={itemVariants}>
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.05 }} // <-- Tambahkan ini untuk membesar saat di-hover
+          transition={{ type: "spring", stiffness: 400, damping: 17 }} // <-- Tambahkan ini untuk efek 'kenyal'
+        >
           <GradientOutlineButton
-            href="https://wa.me/6281234567890" // Ganti dengan nomor Anda
+            href="https://wa.me/6281251112909" // Ganti dengan nomor Anda
             text="Hubungi WhatsApp"
             className="text-white"
           />

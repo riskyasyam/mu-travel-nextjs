@@ -40,10 +40,11 @@ model Dokumentasi {
 }
 
 model Testimoni {
-  id        Int      @id @default(autoincrement())
-  fotoUrl   String?  @db.Text
-  videoUrl  String?  @db.Text
-  createdAt DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  namaJamaah          String
+  deskripsiTestimoni  String   @db.Text
+  fotoUrl             String   @db.Text // Ini untuk screenshot WA
+  createdAt           DateTime @default(now())
 }
 
 // Model BARU untuk Pengguna

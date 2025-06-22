@@ -1,5 +1,6 @@
 import { Poppins, Lora, Plus_Jakarta_Sans } from 'next/font/google';
 import localFont from 'next/font/local';
+import WhatsAppButton from '@/components/shared/whatsapp-button'; 
 import './globals.css';
 
 const poppins = Poppins({
@@ -37,7 +38,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id" className={`${poppins.variable} ${lora.variable} ${jakarta.variable} ${mermaid.variable}`}>
       <body className="bg-white subpixel-antialiased">
-        <main>{children}</main> {/* Di sini konten halaman (page.jsx) akan dimuat */}
+        <main>
+          {children}
+        </main>
+        <WhatsAppButton />
       </body>
     </html>
   );

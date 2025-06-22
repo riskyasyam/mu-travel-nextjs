@@ -1,24 +1,12 @@
-'use client'; // <-- 1. Jadikan Client Component
+'use client'; // <-- Tetap client component karena ada animasi
 
-import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { getPaketLandingPage } from '@/app/lib/actions'; // <-- 2. Impor Server Action
-import PaketCard from './paket-card';
+import PaketCard from './paket-card'; // Pastikan path ini benar
 
-const PaketSection = () => {
-  // 3. Buat state untuk menampung data paket
-  const [paketUmroh, setPaketUmroh] = useState([]);
+// 1. Komponen sekarang menerima 'paketUmroh' sebagai props
+const PaketSection = ({ paketUmroh }) => {
+  // 2. Logika useState dan useEffect untuk fetch data DIHAPUS
 
-  // 4. Ambil data saat komponen pertama kali dimuat
-  useEffect(() => {
-    async function loadPaket() {
-      const data = await getPaketLandingPage();
-      setPaketUmroh(data);
-    }
-    loadPaket();
-  }, []);
-
-  // 5. Definisikan varian animasi
   const containerVariants = {
     hidden: {},
     visible: {
@@ -39,9 +27,14 @@ const PaketSection = () => {
       },
     },
   };
+  
+  // Tambahkan pengecekan jika karena suatu hal datanya kosong
+  if (!paketUmroh || paketUmroh.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="bg-slate-50 py-20 md:py-28">
+    <section id="paket" className="bg-slate-50 py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-6 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
           <p className="font-serif text-lg font-medium bg-gradient-to-r from-[#EAC84C] to-[#D4802A] bg-clip-text text-transparent">
@@ -52,7 +45,6 @@ const PaketSection = () => {
           </h2>
         </motion.div>
 
-        {/* 6. Terapkan motion pada grid container */}
         <motion.div
           className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left"
           variants={containerVariants}
@@ -60,6 +52,7 @@ const PaketSection = () => {
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
         >
+          {/* 3. Langsung map dari props 'paketUmroh' */}
           {paketUmroh.map((paket) => (
             <motion.div key={paket.id} variants={itemVariants}>
               <PaketCard paket={paket} />

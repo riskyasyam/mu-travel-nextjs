@@ -3,12 +3,19 @@ import HeroSection from '@/components/landing/hero-section';
 import AboutSection from "@/components/landing/about-section";
 import CtaTestimonialSection from "@/components/landing/cta-testimonial-section"; 
 import AdvantageSection from "@/components/landing/advantage-section";
-import FeatureSection from '@/components/landing/feature-section';
 import PaketSection from '@/components/landing/paket-section';
-import Navbar from '@/components/shared/navbar';
+import InclusionSection from '@/components/landing/inclusions-section';
+import TestimonialSection from '@/components/landing/testimonial-section';
+import ContactSection from '@/components/landing/contact-section';
 import Footer from '@/components/shared/footer';
+import DocumentationGallery from "@/components/landing/documentation-gallery";
+import { getPaketLandingPage } from "@/app/lib/actions";
 
-export default function LandingPage() {
+
+export default async function LandingPage() {
+
+  const paketData = await getPaketLandingPage();
+
   return (
     <div>
       <PublicNavbar />
@@ -17,11 +24,13 @@ export default function LandingPage() {
         <AboutSection />
         <CtaTestimonialSection />
         <AdvantageSection />
-        <PaketSection />
-        {/* <FeatureSection /> */}
-        {/* ... Letakkan seksi landing page lainnya di sini */}
+        <PaketSection paketUmroh={paketData} />
+        <InclusionSection />
+        <DocumentationGallery />
+        <TestimonialSection />
+        <ContactSection />
       </main>
-      {/* Mungkin Anda juga punya PublicFooter terpisah */}
+      <Footer />
     </div>
   );
 }

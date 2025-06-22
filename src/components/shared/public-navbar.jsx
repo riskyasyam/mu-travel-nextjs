@@ -7,10 +7,10 @@ import { usePathname } from 'next/navigation';
 const PublicNavbar = () => {
   const pathname = usePathname();
   const navLinks = [
-    { name: 'Home', href: '/' },
-    { name: 'Tentang MU Travel', href: '/tentang' },
-    { name: 'Paket Umroh', href: '/paket' },
-    { name: 'Kemitraan', href: '/kemitraan' },
+    { name: 'Home', href: '/#home' },
+    { name: 'Tentang MU Travel', href: '/#tentang' },
+    { name: 'Paket Umroh', href: '/#paket' },
+    { name: 'Alamat', href: '/#alamat' },
   ];
 
   return (
@@ -45,10 +45,10 @@ const PublicNavbar = () => {
         <div>
           <Link
             href="/login"
-            className="inline-block rounded-full bg-gradient-to-r from-[#D4802A] to-[#EAC84C] p-[2px] text-md font-medium text-white hover:shadow-xl transition-shadow"
+            className="group relative inline-block rounded-full bg-gradient-to-r from-[#D4802A] to-[#EAC84C] p-[2px] text-base font-medium text-white transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/30"
           >
-            <span className="block rounded-full bg-black px-5 py-2 hover:bg-transparent transition-colors">
-              <p className= "bg-gradient-to-r from-[#D4802A] to-[#EAC84C] bg-clip-text text-transparent">Login</p>
+            <span className="block rounded-full bg-slate-900 px-6 py-2 transition-colors duration-300 group-hover:bg-transparent">
+              Login
             </span>
           </Link>
         </div>

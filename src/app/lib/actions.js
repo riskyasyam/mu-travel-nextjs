@@ -1,7 +1,7 @@
 'use server';
 
 import { PrismaClient } from '@prisma/client';
-import { writeFile } from 'fs/promises';
+import { writeFile, unlink} from 'fs/promises';
 import path from 'path'; // <-- TAMBAHKAN BARIS INI
 
 import { signIn, signOut } from '@/auth'; // <-- Impor signOut di sini
@@ -42,6 +42,42 @@ export async function logout() {
   });
 }
 
+async function uploadFile(file) {
+  // Cek jika tidak ada file atau ukurannya 0
+  if (!file || file.size === 0) {
+    return null; // Kembalikan null jika tidak ada file
+  }
+
+  // Ubah file menjadi buffer
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  // Buat nama file yang unik dengan timestamp
+  const fileName = `${Date.now()}_${file.name}`;
+  const filePath = path.join(process.cwd(), 'public/uploads', fileName);
+
+  // Tulis file ke server di folder public/uploads
+  await writeFile(filePath, buffer);
+
+  // Kembalikan URL publiknya untuk disimpan ke database
+  return `/uploads/${fileName}`;
+}
+
+export async function getTestimonials() {
+  const prisma = new PrismaClient();
+  try {
+    const testimonials = await prisma.testimoni.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+    return testimonials;
+  } catch (error) {
+    console.error("Gagal mengambil data testimoni:", error);
+    return [];
+  }
+}
+
 export async function getTestimoniById(id) {
   const testimoni = await prisma.testimoni.findUnique({
     where: { id: parseInt(id) },
@@ -49,84 +85,103 @@ export async function getTestimoniById(id) {
   return testimoni;
 }
 
+// MEMBUAT TESTIMONI BARU
 export async function createTestimoni(formData) {
-  const fotoFile = formData.get('foto');
-  const videoFile = formData.get('video');
+  const fotoFile = formData.get('fotoUrl'); // Ambil file dari input dengan name="fotoUrl"
 
-  const fotoUrl = await uploadFile(fotoFile);
-  const videoUrl = fotoUrl ? null : await uploadFile(videoFile);
-
-  if (!fotoUrl && !videoUrl) {
-    throw new Error('Anda harus mengupload foto atau video.');
+  if (!fotoFile || fotoFile.size === 0) {
+    throw new Error('Foto screenshot testimoni wajib diisi.');
   }
 
-  await prisma.testimoni.create({
-    data: { fotoUrl, videoUrl },
-  });
+  // Proses upload file (sama seperti sebelumnya)
+  const fotoUrl = await uploadFile(fotoFile);
+
+  // Ambil data teks yang baru
+  const data = {
+    namaJamaah: formData.get('namaJamaah'),
+    deskripsiTestimoni: formData.get('deskripsiTestimoni'),
+    fotoUrl: fotoUrl, // Gunakan URL dari file yang diupload
+  };
+
+  await prisma.testimoni.create({ data });
 
   revalidatePath('/dashboard/testimoni');
   redirect('/dashboard/testimoni');
 }
 
+// MENGUPDATE TESTIMONI
 export async function updateTestimoni(id, formData) {
-  const testimoni = await prisma.testimoni.findUnique({ where: { id: parseInt(id) } });
-  if (!testimoni) throw new Error('Testimoni tidak ditemukan');
+  const currentTestimoni = await prisma.testimoni.findUnique({ where: { id: parseInt(id) } });
+  if (!currentTestimoni) throw new Error('Testimoni tidak ditemukan');
 
-  const fotoFile = formData.get('foto');
-  const videoFile = formData.get('video');
+  const fotoFile = formData.get('fotoUrl');
+  let newFotoUrl = currentTestimoni.fotoUrl; // Defaultnya pakai URL lama
 
-  let fotoUrl = testimoni.fotoUrl;
-  let videoUrl = testimoni.videoUrl;
-
-  // Jika ada file baru di-upload, hapus file lama (jika ada)
-  if ((fotoFile && fotoFile.size > 0) || (videoFile && videoFile.size > 0)) {
-    const oldFileUrl = testimoni.fotoUrl || testimoni.videoUrl;
-    if (oldFileUrl) {
-      const oldFilePath = path.join(process.cwd(), 'public', oldFileUrl);
-      try { await unlink(oldFilePath); } catch { console.log("File lama tidak ditemukan, melanjutkan proses.")}
+  // Jika ada file baru yang di-upload, proses filenya
+  if (fotoFile && fotoFile.size > 0) {
+    // Hapus file lama jika ada
+    if (currentTestimoni.fotoUrl) {
+      const oldFilePath = path.join(process.cwd(), 'public', currentTestimoni.fotoUrl);
+      try { await unlink(oldFilePath); } catch { console.log("File lama tidak ada, melanjutkan.") }
     }
+    // Upload file baru
+    newFotoUrl = await uploadFile(fotoFile);
   }
 
-  const newFotoUrl = await uploadFile(fotoFile);
-  const newVideoUrl = newFotoUrl ? null : await uploadFile(videoFile);
-  
+  // Siapkan data baru untuk di-update ke database
+  const data = {
+    namaJamaah: formData.get('namaJamaah'),
+    deskripsiTestimoni: formData.get('deskripsiTestimoni'),
+    fotoUrl: newFotoUrl, // Gunakan URL baru jika ada, atau URL lama jika tidak
+  };
+
   await prisma.testimoni.update({
     where: { id: parseInt(id) },
-    data: {
-      fotoUrl: newFotoUrl || (newVideoUrl ? null : fotoUrl),
-      videoUrl: newVideoUrl || (newFotoUrl ? null : videoUrl),
-    },
+    data,
   });
 
   revalidatePath('/dashboard/testimoni');
   redirect('/dashboard/testimoni');
 }
 
+// MENGHAPUS TESTIMONI
 export async function deleteTestimoni(id) {
   try {
     const testimoni = await prisma.testimoni.findUnique({ where: { id: parseInt(id) } });
 
-    // Hapus file fisik jika ada (baik foto maupun video)
-    if (testimoni) {
-      const fileUrl = testimoni.fotoUrl || testimoni.videoUrl;
-      if (fileUrl) {
-        const filePath = path.join(process.cwd(), 'public', fileUrl);
-        await unlink(filePath);
-      }
+    // Hanya hapus foto, karena tidak ada video lagi
+    if (testimoni && testimoni.fotoUrl) {
+      const filePath = path.join(process.cwd(), 'public', testimoni.fotoUrl);
+      await unlink(filePath);
     }
     
     await prisma.testimoni.delete({ where: { id: parseInt(id) } });
 
   } catch (error) {
-    // Tangani jika file tidak ditemukan tapi tetap ingin hapus record DB
-    if (error.code === 'ENOENT') {
-        await prisma.testimoni.delete({ where: { id: parseInt(id) } });
-    } else {
+    if (error.code !== 'ENOENT') { // Abaikan error jika file tidak ditemukan
         console.error("Gagal menghapus testimoni:", error);
+    } else {
+        // Jika file tidak ada tapi record DB ada, tetap hapus record DB
+        await prisma.testimoni.delete({ where: { id: parseInt(id) } });
     }
   }
 
   revalidatePath('/dashboard/testimoni');
+}
+
+export async function getDokumentasi() {
+  try {
+    const dokumentasi = await prisma.dokumentasi.findMany({
+      orderBy: {
+        createdAt: 'desc', // Tampilkan yang terbaru di awal
+      },
+    });
+    return dokumentasi;
+  } catch (error) {
+    console.error("Gagal mengambil data dokumentasi:", error);
+    // Kembalikan array kosong jika terjadi error
+    return [];
+  }
 }
 
 export async function getDokumentasiById(id) {
@@ -281,34 +336,90 @@ export async function createPaket(formData) {
   redirect('/dashboard/paket');
 }
 
+export async function sendToWhatsApp(formData) {
+  // ... (kode untuk mengambil nama, email, dll.)
+  const name = formData.get('name');
+  const email = formData.get('email');
+  const phone = formData.get('phone');
+  const message = formData.get('message');
+
+  // ---> GANTI NOMOR DI SINI <---
+  const waNumber = "6281251112909"; 
+
+  const text = `
+Halo, saya ingin bertanya tentang paket umroh.
+---------------------
+Nama: ${name}
+Email: ${email}
+No. Telepon: ${phone}
+---------------------
+Pesan:
+${message}
+  `.trim();
+
+  const waLink = `https://wa.me/${waNumber}?text=${encodeURIComponent(text)}`;
+  
+  redirect(waLink);
+}
+
 // UPDATE PAKET
 export async function updatePaket(id, formData) {
-  const file = formData.get('fotoPaket');
-  let fileUrl = formData.get('fotoUrlLama'); // Ambil URL lama
+  console.log('--- ACTION UPDATEPAKET DIPANGGIL ---');
+  console.log('ID Paket:', id);
 
-  // Cek jika ada file baru yang di-upload
-  if (file && file.size > 0) {
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const timestamp = Date.now();
-    const fileName = `${timestamp}_${file.name}`;
-    const filePath = path.join(process.cwd(), 'public/uploads', fileName);
-    
-    await writeFile(filePath, buffer);
-    fileUrl = `/uploads/${fileName}`; // Ganti dengan URL baru
-    // Di aplikasi nyata, Anda mungkin ingin menghapus file lama dari server
+  const fotoFile = formData.get('fotoPaket');
+  let fileUrl = formData.get('fotoUrlLama'); 
+
+  console.log('File baru diterima:', fotoFile?.name || 'Tidak ada file baru');
+
+  // Jika ada file baru yang di-upload, proses filenya
+  if (fotoFile && fotoFile.size > 0) {
+    console.log('Memproses upload file baru...');
+    // Hapus file lama jika ada
+    const currentPaket = await prisma.paket.findUnique({ where: { id: parseInt(id) } });
+    if (currentPaket?.fotoUrl) {
+      const oldFilePath = path.join(process.cwd(), 'public', currentPaket.fotoUrl);
+      try { 
+        await unlink(oldFilePath);
+        console.log('File lama berhasil dihapus:', currentPaket.fotoUrl);
+      } catch { 
+        console.log("File lama tidak ditemukan, melanjutkan proses.");
+      }
+    }
+    // Upload file baru
+    fileUrl = await uploadFile(fotoFile);
+    console.log('File baru berhasil diupload, URL:', fileUrl);
   }
 
+  // Siapkan data baru untuk di-update ke database
   const data = {
     namaPaket: formData.get('namaPaket'),
-    fotoUrl: fileUrl, // Gunakan URL baru jika ada, atau URL lama jika tidak
-    // ... (sisa field lainnya sama seperti di createPaket)
+    fotoUrl: fileUrl,
+    deskripsi: formData.get('deskripsi'),
+    harga: parseInt(formData.get('harga'), 10),
+    durasi: parseInt(formData.get('durasi'), 10),
+    tanggalKeberangkatan: new Date(formData.get('tanggalKeberangkatan')),
+    hotelMadinah: formData.get('hotelMadinah'),
+    hotelMakkah: formData.get('hotelMakkah'),
+    pesawat: formData.get('pesawat'),
+    ratingHotelMakkah: parseInt(formData.get('ratingHotelMakkah'), 10),
+    ratingHotelMadinah: parseInt(formData.get('ratingHotelMadinah'), 10),
+    sisaKursi: parseInt(formData.get('sisaKursi'), 10),
   };
 
-  await prisma.paket.update({ where: { id: parseInt(id) }, data: {
-      ...data,
-      // ... (lengkapi semua field yang di-parse seperti di createPaket)
-  } });
+  // --- INI BAGIAN PALING PENTING UNTUK DILIHAT ---
+  console.log('DATA YANG AKAN DIUPDATE:', data);
+  // ---------------------------------------------
+
+  try {
+    await prisma.paket.update({
+      where: { id: parseInt(id) },
+      data,
+    });
+    console.log('SUKSES: Data paket berhasil diupdate di database.');
+  } catch (error) {
+    console.error('ERROR SAAT UPDATE PRISMA:', error); // Tampilkan error jika gagal
+  }
 
   revalidatePath('/dashboard/paket');
   redirect('/dashboard/paket');
