@@ -40,7 +40,7 @@ const PaketSection = ({ paketUmroh }) => {
           <p className="font-serif text-lg font-medium bg-gradient-to-r from-[#EAC84C] to-[#D4802A] bg-clip-text text-transparent">
             Lihat - Pilih - Hubungi Kontak - Pesan
           </p>
-          <h2 className="mt-2 text-4xl md:text-5xl font-extrabold text-gray-900 font-['var(--font-mermaid)']">
+          <h2 className="mt-2 text-4xl md:text-5xl font-extrabold text-gray-900 font-poppins">
             Paket Umroh Pilihan Terbaik
           </h2>
         </motion.div>

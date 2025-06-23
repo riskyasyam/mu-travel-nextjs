@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Link from 'next/link'; // Kita masih butuh Link untuk edit di dashboard, jadi jangan dihapus
+import Link from 'next/link';
 import StarRating from '@/components/ui/star-rating';
 import { Clock, Users } from 'lucide-react';
 
@@ -15,20 +15,14 @@ const PaketCard = ({ paket }) => {
   const airlineName = paket.pesawat.toLowerCase();
   const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.png';
 
-  // --- 1. LOGIKA BARU UNTUK LINK WHATSAPP ---
-  const whatsAppNumber = "6281251112909"; // <-- GANTI DENGAN NOMOR WA ANDA
-  const message = `Assalamualaikum, saya tertarik dengan paket "${paket.namaPaket}". Mohon informasinya.`;
-  const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(message)}`;
-  // -----------------------------------------
-
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 flex flex-col">
-      <div className="relative w-full h-48">
+      <div className="relative w-full h-48 bg-gray-200 rounded-t-xl">
         <Image
           src={paket.fotoUrl}
           alt={`Foto ${paket.namaPaket}`}
           fill
-          className="object-cover rounded-t-xl"
+          className="object-cover rounded-t-xl" // <-- KEMBALIKAN KE SINI
         />
       </div>
       <div className="p-5 flex flex-col flex-grow">
@@ -64,16 +58,13 @@ const PaketCard = ({ paket }) => {
           </div>
         </div>
 
-        {/* --- 2. UBAH LINK BOOKING MENJADI LINK WHATSAPP --- */}
-        <a 
-          href={whatsAppLink}
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* --- TOMBOL KEMBALI MENGARAH KE HALAMAN DETAIL --- */}
+        <Link 
+          href={`/paket/${paket.id}`}
           className="mt-4 block w-full text-center px-4 py-2 rounded-lg font-semibold text-orange-500 border-2 border-orange-400 hover:bg-orange-400 hover:text-white transition-colors"
         >
-          Booking Sekarang
-        </a>
-
+          Lihat Detail Paket
+        </Link>
       </div>
     </div>
   );

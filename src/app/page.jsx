@@ -9,6 +9,7 @@ import TestimonialSection from '@/components/landing/testimonial-section';
 import ContactSection from '@/components/landing/contact-section';
 import Footer from '@/components/shared/footer';
 import DocumentationGallery from "@/components/landing/documentation-gallery";
+import FounderSection from "@/components/landing/founder-section";
 import { getPaketLandingPage } from "@/app/lib/actions";
 
 
@@ -18,7 +19,7 @@ export default async function LandingPage() {
 
   return (
     <div>
-      <PublicNavbar />
+      <PublicNavbar variant="transparent" />
       <main>
         <HeroSection />
         <AboutSection />
@@ -27,6 +28,7 @@ export default async function LandingPage() {
         <PaketSection paketUmroh={paketData} />
         <InclusionSection />
         <DocumentationGallery />
+        <FounderSection />
         <TestimonialSection />
         <ContactSection />
       </main>

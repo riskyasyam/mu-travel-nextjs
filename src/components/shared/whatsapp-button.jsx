@@ -13,7 +13,7 @@ const WhatsAppButton = () => {
   }
 
   // --- Konfigurasi WhatsApp (tetap sama) ---
-  const whatsAppNumber = "6281234567890";
+  const whatsAppNumber = "6281251112909";
   const message = "Assalamualaikum, saya tertarik dengan paket umroh dari MU Travel. Mohon informasinya.";
   const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(message)}`;
 
