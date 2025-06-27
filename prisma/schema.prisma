@@ -29,6 +29,7 @@ model Paket {
   sisaKursi           Int
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  pemesanan             Pemesanan[] // Paket bisa memiliki banyak pemesanan
 }
 
 // ---> TAMBAHKAN MODEL-MODEL BARU INI <---
@@ -45,6 +46,55 @@ model Testimoni {
   deskripsiTestimoni  String   @db.Text
   fotoUrl             String   @db.Text // Ini untuk screenshot WA
   createdAt           DateTime @default(now())
+}
+
+model Jamaah {
+  id                Int      @id @default(autoincrement())
+  namaLengkap       String
+  nomorKtp          String   @unique
+  nomorPaspor       String?   @unique
+  tempatLahir       String
+  tanggalLahir      DateTime
+  jenisKelamin      String
+  alamat            String   @db.Text
+  nomorTelepon      String
+  email             String?
+  pekerjaan         String?
+  scanKtpUrl        String?  @db.Text
+  scanPasporUrl     String?  @db.Text
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  pemesanan         Pemesanan[] // Satu jama'ah bisa punya banyak pemesanan
+  tabungan          Tabungan[]  // Satu jama'ah bisa punya banyak histori tabungan
+}
+
+// ---> MODEL BARU UNTUK PEMESANAN PAKET <---
+model Pemesanan {
+  id                Int      @id @default(autoincrement())
+  tanggalPemesanan  DateTime @default(now())
+  statusPembayaran  String   // Misal: LUNAS_CICILAN_FIF, LUNAS_TABUNGAN, DP, dll.
+  catatan           String?  @db.Text
+
+  jamaahId          Int
+  jamaah            Jamaah   @relation(fields: [jamaahId], references: [id])
+  
+  paketId           Int
+  paket             Paket    @relation(fields: [paketId], references: [id])
+
+  @@unique([jamaahId, paketId]) // Mencegah 1 orang membeli paket yang sama 2x
+}
+
+// ---> MODEL BARU UNTUK TABUNGAN <---
+model Tabungan {
+  id              Int      @id @default(autoincrement())
+  tanggalSetoran  DateTime @default(now())
+  jumlahSetoran   Int
+  keterangan      String?
+
+  jamaahId        Int
+  jamaah          Jamaah   @relation(fields: [jamaahId], references: [id])
 }
 
 // Model BARU untuk Pengguna

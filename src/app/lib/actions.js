@@ -42,6 +42,342 @@ export async function logout() {
   });
 }
 
+export async function getFilteredPemesanan({ from, to }) {
+  try {
+    const pemesanan = await prisma.pemesanan.findMany({
+      where: {
+        tanggalPemesanan: {
+          gte: from, // gte = greater than or equal to (mulai dari tanggal 'from')
+          lte: to,   // lte = less than or equal to (sampai dengan tanggal 'to')
+        },
+      },
+      include: {
+        jamaah: true,
+        paket: true,
+      },
+      orderBy: {
+        tanggalPemesanan: 'desc',
+      },
+    });
+    return pemesanan;
+  } catch (error) {
+    console.error("Gagal mengambil data pemesanan terfilter:", error);
+    return [];
+  }
+}
+
+// Mengambil data pemesanan terbaru untuk ditampilkan di dashboard
+export async function getRecentPemesanan() {
+  try {
+    return await prisma.pemesanan.findMany({
+      orderBy: { tanggalPemesanan: 'desc' },
+      take: 5,
+      include: {
+        jamaah: { select: { namaLengkap: true } },
+        paket: { select: { namaPaket: true } },
+      },
+    });
+  } catch (error) {
+    console.error("Gagal mengambil data pemesanan terbaru:", error);
+    return [];
+  }
+}
+
+// --- CRUD UNTUK PEMESANAN ---
+
+// Mengambil semua data pemesanan untuk ditampilkan di tabel
+export async function getAllPemesanan(query) {
+  const whereClause = query ? {
+    OR: [
+      { jamaah: { namaLengkap: { contains: query } } },
+      { paket: { namaPaket: { contains: query } } },
+    ],
+  } : {};
+
+  return await prisma.pemesanan.findMany({
+    where: whereClause,
+    include: {
+      jamaah: true, // Sertakan data jamaah terkait
+      paket: true,  // Sertakan data paket terkait
+    },
+    orderBy: { tanggalPemesanan: 'desc' },
+  });
+}
+
+// Mengambil satu data pemesanan untuk halaman edit
+export async function getPemesananById(id) {
+  const pemesananId = parseInt(id, 10);
+  return await prisma.pemesanan.findUnique({
+    where: { id: pemesananId },
+  });
+}
+
+// Membuat pemesanan baru
+export async function createPemesanan(formData) {
+  const data = {
+    jamaahId: parseInt(formData.get('jamaahId'), 10),
+    paketId: parseInt(formData.get('paketId'), 10),
+    statusPembayaran: formData.get('statusPembayaran'),
+    catatan: formData.get('catatan'),
+  };
+
+  await prisma.pemesanan.create({ data });
+  revalidatePath('/dashboard/pemesanan');
+  redirect('/dashboard/pemesanan');
+}
+
+// Mengupdate pemesanan
+export async function updatePemesanan(id, formData) {
+  const pemesananId = parseInt(id, 10);
+  const data = {
+    jamaahId: parseInt(formData.get('jamaahId'), 10),
+    paketId: parseInt(formData.get('paketId'), 10),
+    statusPembayaran: formData.get('statusPembayaran'),
+    catatan: formData.get('catatan'),
+  };
+
+  await prisma.pemesanan.update({ where: { id: pemesananId }, data });
+  revalidatePath('/dashboard/pemesanan');
+  redirect('/dashboard/pemesanan');
+}
+
+// Menghapus pemesanan
+export async function deletePemesanan(id) {
+  const pemesananId = parseInt(id, 10);
+  await prisma.pemesanan.delete({ where: { id: pemesananId } });
+  revalidatePath('/dashboard/pemesanan');
+}
+
+// 1. Mengambil daftar semua jamaah beserta total tabungan mereka
+export async function getJamaahWithTotalTabungan() {
+  try {
+    const jamaahWithTabungan = await prisma.jamaah.findMany({
+      include: {
+        _count: {
+          select: { tabungan: true }, // Menghitung jumlah setoran
+        },
+        tabungan: {
+          select: {
+            jumlahSetoran: true, // Hanya ambil kolom jumlah setoran untuk dijumlahkan
+          },
+        },
+      },
+      orderBy: { namaLengkap: 'asc' },
+    });
+
+    // Kalkulasi total tabungan untuk setiap jamaah
+    return jamaahWithTabungan.map(j => ({
+      ...j,
+      totalTabungan: j.tabungan.reduce((sum, current) => sum + current.jumlahSetoran, 0),
+    }));
+
+  } catch (error) {
+    console.error("Gagal mengambil data rekapitulasi tabungan:", error);
+    return [];
+  }
+}
+
+// 2. Mengambil riwayat setoran untuk SATU jamaah
+export async function getSetoranByJamaahId(jamaahId) {
+  const id = parseInt(jamaahId, 10);
+  try {
+    const jamaah = await prisma.jamaah.findUnique({
+      where: { id },
+      include: {
+        tabungan: {
+          orderBy: { tanggalSetoran: 'desc' },
+        },
+      },
+    });
+    return jamaah;
+  } catch (error) {
+    console.error("Gagal mengambil riwayat setoran:", error);
+    return null;
+  }
+}
+
+// 3. Menambahkan data setoran baru
+export async function createSetoran(formData) {
+  const jamaahId = parseInt(formData.get('jamaahId'), 10);
+  const jumlahSetoran = parseInt(formData.get('jumlahSetoran'), 10);
+  const keterangan = formData.get('keterangan');
+
+  if (!jamaahId || !jumlahSetoran) {
+    throw new Error('Data tidak lengkap');
+  }
+
+  await prisma.tabungan.create({
+    data: {
+      jamaahId,
+      jumlahSetoran,
+      keterangan,
+    },
+  });
+
+  revalidatePath(`/dashboard/tabungan/detail/${jamaahId}`);
+  redirect(`/dashboard/tabungan/detail/${jamaahId}`);
+}
+
+// --- CRUD UNTUK DATA JAMA'AH ---
+
+// Mengambil SEMUA data jamaah untuk ditampilkan di tabel
+export async function getAllJamaah(query) {
+  try {
+    const whereClause = query ? {
+      OR: [
+        { namaLengkap: { contains: query } },
+        { nomorKtp: { contains: query } },
+        { nomorTelepon: { contains: query } },
+      ],
+    } : {};
+
+    const jamaah = await prisma.jamaah.findMany({
+      where: whereClause,
+      orderBy: { namaLengkap: 'asc' },
+    });
+    return jamaah;
+  } catch (error) {
+    console.error("Gagal mengambil data jamaah:", error);
+    return [];
+  }
+}
+
+// Mengambil SATU data jamaah berdasarkan ID untuk halaman edit
+export async function getJamaahById(id) {
+  const jamaahId = parseInt(id, 10);
+  const jamaah = await prisma.jamaah.findUnique({
+    where: { id: jamaahId },
+  });
+  if (!jamaah) notFound();
+  return jamaah;
+}
+
+// MEMBUAT DATA JAMA'AH BARU
+export async function createJamaah(formData) {
+  const fileKtp = formData.get('scanKtp');
+  const filePaspor = formData.get('scanPaspor');
+
+  // Proses upload kedua file secara paralel
+  const [scanKtpUrl, scanPasporUrl] = await Promise.all([
+    uploadFile(fileKtp),
+    uploadFile(filePaspor)
+  ]);
+
+  const data = {
+    // ... (data lain: namaLengkap, nomorKtp, dll)
+    namaLengkap: formData.get('namaLengkap'),
+    nomorKtp: formData.get('nomorKtp'),
+    nomorPaspor: formData.get('nomorPaspor') || null,
+    tempatLahir: formData.get('tempatLahir'),
+    tanggalLahir: new Date(formData.get('tanggalLahir')),
+    jenisKelamin: formData.get('jenisKelamin'),
+    alamat: formData.get('alamat'),
+    nomorTelepon: formData.get('nomorTelepon'),
+    email: formData.get('email'),
+    pekerjaan: formData.get('pekerjaan'),
+    // Tambahkan URL file yang sudah di-upload
+    scanKtpUrl: scanKtpUrl,
+    scanPasporUrl: scanPasporUrl,
+  };
+
+  await prisma.jamaah.create({ data });
+  revalidatePath('/dashboard/jamaah');
+  redirect('/dashboard/jamaah');
+}
+
+
+// MENGUPDATE DATA JAMA'AH
+export async function updateJamaah(id, formData) {
+  const jamaahId = parseInt(id, 10);
+  
+  // 1. Ambil data jamaah saat ini dari DB untuk mendapatkan URL file lama
+  const currentJamaah = await prisma.jamaah.findUnique({ where: { id: jamaahId } });
+  if (!currentJamaah) {
+    throw new Error('Data jamaah tidak ditemukan.');
+  }
+
+  // 2. Proses file KTP jika ada file baru yang diupload
+  const fileKtp = formData.get('scanKtp');
+  let scanKtpUrl = currentJamaah.scanKtpUrl; // Defaultnya pakai URL lama
+
+  if (fileKtp && fileKtp.size > 0) {
+    console.log("Mengupload KTP baru...");
+    // Hapus file KTP lama dari server jika ada
+    if (currentJamaah.scanKtpUrl) {
+      try {
+        await unlink(path.join(process.cwd(), 'public', currentJamaah.scanKtpUrl));
+      } catch (err) {
+        console.log("Gagal menghapus file KTP lama (mungkin sudah tidak ada):", err.message);
+      }
+    }
+    // Upload file KTP yang baru
+    scanKtpUrl = await uploadFile(fileKtp);
+  }
+
+  // 3. Proses file Paspor jika ada file baru yang diupload
+  const filePaspor = formData.get('scanPaspor');
+  let scanPasporUrl = currentJamaah.scanPasporUrl; // Defaultnya pakai URL lama
+
+  if (filePaspor && filePaspor.size > 0) {
+    console.log("Mengupload Paspor baru...");
+    // Hapus file Paspor lama dari server jika ada
+    if (currentJamaah.scanPasporUrl) {
+      try {
+        await unlink(path.join(process.cwd(), 'public', currentJamaah.scanPasporUrl));
+      } catch (err) {
+        console.log("Gagal menghapus file Paspor lama (mungkin sudah tidak ada):", err.message);
+      }
+    }
+    // Upload file Paspor yang baru
+    scanPasporUrl = await uploadFile(filePaspor);
+  }
+  
+  // 4. Siapkan semua data yang akan diupdate
+  const data = {
+    namaLengkap: formData.get('namaLengkap'),
+    nomorKtp: formData.get('nomorKtp'),
+    nomorPaspor: formData.get('nomorPaspor') || null,
+    tempatLahir: formData.get('tempatLahir'),
+    tanggalLahir: new Date(formData.get('tanggalLahir')),
+    jenisKelamin: formData.get('jenisKelamin'),
+    alamat: formData.get('alamat'),
+    nomorTelepon: formData.get('nomorTelepon'),
+    email: formData.get('email'),
+    pekerjaan: formData.get('pekerjaan'),
+    scanKtpUrl: scanKtpUrl, // Gunakan URL KTP yang baru atau yang lama
+    scanPasporUrl: scanPasporUrl, // Gunakan URL Paspor yang baru atau yang lama
+  };
+
+  try {
+    // 5. Update data di database
+    await prisma.jamaah.update({
+      where: { id: jamaahId },
+      data,
+    });
+  } catch (error) {
+    console.error("Gagal mengupdate data jamaah di DB:", error);
+    // Di sini Anda bisa mengembalikan pesan error jika mau
+    throw new Error("Gagal mengupdate data jamaah.");
+  }
+  
+  // 6. Revalidasi dan Redirect
+  revalidatePath('/dashboard/jamaah');
+  redirect('/dashboard/jamaah');
+}
+
+// MENGHAPUS DATA JAMA'AH
+export async function deleteJamaah(id) {
+  const jamaahId = parseInt(id, 10);
+  try {
+    // Di masa depan, tambahkan pengecekan apakah jamaah ini punya pemesanan/tabungan aktif
+    await prisma.jamaah.delete({ where: { id: jamaahId } });
+  } catch (error) {
+    console.error("Gagal menghapus jamaah:", error);
+    // Mungkin akan error jika jamaah terhubung dengan data lain, ini bagus untuk integritas data
+  }
+  revalidatePath('/dashboard/jamaah');
+}
+
 async function uploadFile(file) {
   // Cek jika tidak ada file atau ukurannya 0
   if (!file || file.size === 0) {

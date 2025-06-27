@@ -14,7 +14,11 @@ import {
   User,
   Settings,
   LogOut,
+  Users, // <-- Tambahkan ini
+  ShoppingCart, // <-- Tambahkan ini
+  PiggyBank, // <-- Tambahkan ini
   Sparkles, // Ikon untuk Horizon AI
+  BarChart3,
 } from 'lucide-react';
 import { logout } from '@/app/lib/actions';
 import Image from 'next/image';
@@ -25,9 +29,13 @@ const Sidebar = () => {
   // Menyesuaikan menu dengan contoh di gambar
   const menus = [
     { name: 'Main Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Data Jamaah', href: '/dashboard/jamaah', icon: Users },
+    { name: 'Pemesanan Paket', href: '/dashboard/pemesanan', icon: ShoppingCart }, // Contoh ikon
+    { name: 'Tabungan Jamaah', href: '/dashboard/tabungan', icon: PiggyBank }, // Contoh ikon
     { name: 'Paket Umroh', href: '/dashboard/paket', icon: MessageSquare },
     { name: 'Dokumentasi ', href: '/dashboard/dokumentasi', icon: PencilRuler },
     { name: 'Testimoni', href: '/dashboard/testimoni', icon: FileText },
+    { name: 'Laporan', href: '/dashboard/laporan', icon: BarChart3 }, 
   ];
 
   return (
