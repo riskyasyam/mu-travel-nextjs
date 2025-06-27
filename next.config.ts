@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const config = {
-  // Tempatkan serverActions di dalam blok experimental
+  // Konfigurasi yang sudah ada
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

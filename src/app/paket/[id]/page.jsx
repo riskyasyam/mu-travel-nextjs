@@ -6,11 +6,17 @@ import PublicNavbar from '@/components/shared/public-navbar';
 import Footer from '@/components/shared/footer';
 import StarRating from '@/components/ui/star-rating';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, CheckCircle2, Plane, Hotel, BookOpen } from 'lucide-react';
-
+import { Clock, Users, CheckCircle2, Plane, Hotel, BookOpen, Calendar } from 'lucide-react';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const prisma = new PrismaClient();
 
+// Fungsi untuk mengambil data satu paket (tetap sama)
 async function getPaket(id) {
   const paket = await prisma.paket.findUnique({
     where: { id: parseInt(id) },
@@ -21,100 +27,125 @@ async function getPaket(id) {
   return paket;
 }
 
-export default async function PaketDetailPage({ params }) {
-  const paket = await getPaket(params.id);
+// FUNGSI BARU: untuk generate metadata dinamis (SEO)
+export async function generateMetadata({ params: { id } }) {
+  const paket = await prisma.paket.findUnique({ where: { id: parseInt(id) } });
 
-  const airlineName = paket.pesawat.toLowerCase();
-  const airlineLogos = {
-    'lion air': '/images/airlines/lion-air.png',
-    'garuda indonesia': '/images/airlines/garuda-indonesia.png',
-    'citilink': '/images/airlines/citilink.png',
-    'batik air': '/images/airlines/batik-air.png',
-    'saudia': '/images/airlines/saudia.png',
-  };
-  const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.png';
-  
+  if (!paket) {
+    return {
+      title: "Paket Tidak Ditemukan",
+      description: "Paket umroh yang Anda cari tidak tersedia."
+    }
+  }
+
+  return {
+    title: `${paket.namaPaket} - MU Travel`,
+    description: paket.deskripsi.substring(0, 160), // Ambil 160 karakter pertama untuk deskripsi
+  }
+}
+
+
+// Komponen Halaman Utama
+export default async function PaketDetailPage({ params: { id } }) {
+  // Pengambilan data paket tetap sama di sini
+  const paket = await getPaket(id);
+
+  // ... (semua logika untuk whatsAppLink, fasilitas, dll. tetap sama)
   const whatsAppNumber = "6281251112909";
   const message = `Assalamualaikum, saya ingin bertanya tentang Paket Umroh "${paket.namaPaket}" keberangkatan tanggal ${new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}.`;
   const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(message)}`;
-
-  const fasilitas = [
-    "Tiket Pesawat PP", "Visa Umroh Resmi", "Hotel Berbintang", "Full Handling Service",
-    "Koper dan Perlengkapan Umroh", "Ziarah Makkah & Madinah", "Makan 3x Sehari",
-    "Muthawwif / Muthawwifah", "Tour Leader", "Welcome Food & Snack",
-    "Manasik Umroh", "Air Zamzam 5 ltr"
-  ];
+  const fasilitas = [ "Tiket Pesawat PP", "Visa Umroh Resmi", "Hotel Bintang 5", "Handling Service", "Perlengkapan Umroh", "Ziarah", "Makan 3x Sehari", "Muthawwif", "Tour Leader", "Snack & Welcome Food", "Manasik Umroh", "Air Zamzam 5 ltr"];
 
   return (
-    <div className="bg-slate-50">
-      <PublicNavbar variant="solid" /> 
-      <main className="pt-24">
+    <div className="bg-white">
+      <PublicNavbar variant="solid" />
+      <main className="pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          
+          {/* Judul dan Info Singkat di bagian atas untuk mobile */}
+          <div className="lg:hidden mb-6">
+            <p className="text-sm font-medium text-orange-600">MU Travel Balikpapan</p>
+            <h1 className="text-3xl font-extrabold text-gray-900 mt-1">{paket.namaPaket}</h1>
+          </div>
 
-        {/* --- BAGIAN UTAMA DENGAN LAYOUT BARU --- */}
-        <section className="max-w-7xl mx-auto px-6 py-12">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-                
-                {/* Kolom Kiri (lebih besar) untuk Konten */}
-                <div className="lg:col-span-3 space-y-8">
-                    {/* Judul dan Info Singkat */}
-                    <div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 leading-tight">{paket.namaPaket}</h1>
-                        <p className="text-gray-500 mt-2">Keberangkatan: {new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                        
-                        <div className="mt-4 flex flex-wrap gap-4">
-                            <div className="flex items-center gap-2 text-sm"><Clock size={16} className="text-orange-500"/> Durasi: <span className="font-semibold">{paket.durasi} Hari</span></div>
-                            <div className="flex items-center gap-2 text-sm"><Users size={16} className="text-orange-500"/> Kuota: <span className="font-semibold">{paket.sisaKursi} Kursi</span></div>
-                            <div className="flex items-center gap-2 text-sm"><Plane size={16} className="text-orange-500"/> Maskapai: <span className="font-semibold capitalize">{paket.pesawat}</span></div>
-                        </div>
-                    </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
-                    {/* Deskripsi */}
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2"><BookOpen size={20}/> Deskripsi Paket</h3>
-                        <div className="prose max-w-none text-gray-600 leading-relaxed">
-                            {paket.deskripsi}
-                        </div>
-                    </div>
-
-                    {/* Harga Termasuk */}
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-xl font-bold text-gray-800 mb-4">Harga Sudah Termasuk</h3>
-                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600">
-                            {fasilitas.map(item => (
-                                <li key={item} className="flex items-center gap-2">
-                                    <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
-                                    <span>{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Kolom Kanan (lebih kecil) untuk Gambar Brosur & Booking */}
-                <div className="lg:col-span-2">
-                    <div className="sticky top-28 space-y-6">
-                        {/* Gambar Brosur */}
-                        <div className="relative w-full aspect-[2/3] rounded-xl overflow-hidden shadow-lg border">
-                        {/* ^--- Kita kembalikan aspect ratio untuk wadah */}
-                            <Image
-                                src={paket.fotoUrl}
-                                alt={`Brosur ${paket.namaPaket}`}
-                                fill
-                                className="object-contain bg-white" // <-- Pastikan menggunakan object-contain
-                            />
-                        </div>
-                        {/* Kartu Booking */}
-                        <div className="bg-white p-6 rounded-xl shadow-lg border">
-                            <p className="text-sm text-gray-500">Harga Mulai</p>
-                            <p className="text-4xl font-bold text-orange-500 mb-4">Rp {paket.harga.toLocaleString('id-ID')}</p>
-                            <Button asChild size="lg" className="w-full text-base bg-orange-500 hover:bg-orange-600">
-                                <a href={whatsAppLink} target="_blank" rel="noopener noreferrer">Konsultasi via WhatsApp</a>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+            {/* KOLOM KIRI: GALERI GAMBAR */}
+            <div className="lg:sticky lg:top-28 space-y-4">
+              <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
+                <Image
+                  src={paket.fotoUrl}
+                  alt={`Foto utama ${paket.namaPaket}`}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              {/* Anda bisa menambahkan galeri thumbnail di sini nanti jika mau */}
             </div>
-        </section>
+
+            {/* KOLOM KANAN: DETAIL & AKSI */}
+            <div className="space-y-6">
+              <div className="hidden lg:block"> {/* Sembunyikan judul ini di mobile */}
+                <p className="text-sm font-medium text-orange-600">MU Travel Balikpapan</p>
+                <h1 className="text-4xl font-extrabold text-gray-900 mt-1">{paket.namaPaket}</h1>
+              </div>
+              
+              <div className="flex items-center gap-4 border-b pb-6">
+                  <StarRating rating={paket.ratingHotelMakkah} />
+                  <span className="text-sm text-gray-500">({paket.sisaKursi} sisa kuota)</span>
+              </div>
+
+              <p className="text-4xl font-bold text-gray-800">
+                Rp {paket.harga.toLocaleString('id-ID')}
+              </p>
+
+              <div className="text-sm text-gray-600 space-y-2">
+                 <div className="flex items-center gap-3"><Calendar size={16} /><span>Keberangkatan: {new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
+                 <div className="flex items-center gap-3"><Clock size={16} /><span>Durasi: {paket.durasi} Hari</span></div>
+                 <div className="flex items-center gap-3"><Plane size={16} /><span>Maskapai: {paket.pesawat}</span></div>
+              </div>
+
+              <Button asChild size="lg" className="w-full text-base bg-orange-500 hover:bg-orange-600">
+                <a href={whatsAppLink} target="_blank" rel="noopener noreferrer">Booking via WhatsApp</a>
+              </Button>
+              
+              <div className="border-t pt-4">
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="item-1">
+                    <AccordionTrigger className="font-semibold text-base">Deskripsi Paket</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="prose prose-sm max-w-none text-gray-600">
+                        {paket.deskripsi}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-2">
+                    <AccordionTrigger className="font-semibold text-base">Fasilitas Termasuk</AccordionTrigger>
+                    <AccordionContent>
+                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-gray-600 pt-2 text-sm">
+                          {fasilitas.map(item => (
+                              <li key={item} className="flex items-center gap-2">
+                                  <CheckCircle2 size={16} className="text-green-500 flex-shrink-0" />
+                                  <span>{item}</span>
+                              </li>
+                          ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="item-3">
+                    <AccordionTrigger className="font-semibold text-base">Detail Akomodasi</AccordionTrigger>
+                    <AccordionContent>
+                      <div className="space-y-2 text-gray-600 text-sm">
+                          <div className="flex justify-between"><span>Hotel Makkah:</span><span className="font-semibold text-right">{paket.hotelMakkah}</span></div>
+                          <div className="flex justify-between"><span>Hotel Madinah:</span><span className="font-semibold text-right">{paket.hotelMadinah}</span></div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            </div>
+          </div>
+        </div>
       </main>
       <Footer />
     </div>
