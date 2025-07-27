@@ -1,8 +1,10 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PrismaClient } from '@prisma/client';
-import { deletePaket } from '@/app/lib/actions';
-import { Button } from '@/components/ui/button'; // <-- Impor Button
+import api from '@/lib/api'; // Menggunakan axios client
+import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -10,27 +12,56 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"; // <-- Impor komponen Tabel
-import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation'; // <-- Impor komponen delete kita
+} from "@/components/ui/table";
+import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
 
-const prisma = new PrismaClient();
+export default function PaketPage() {
+  const [allPaket, setAllPaket] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function PaketPage() {
-  const allPaket = await prisma.paket.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
+  // Fungsi untuk mengambil data dari API Laravel
+  const fetchPakets = async () => {
+    try {
+      // Panggil endpoint yang kita buat di Laravel untuk dashboard
+      const response = await api.get('/dashboard/pakets'); 
+      setAllPaket(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data paket:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ambil data saat komponen pertama kali dimuat
+  useEffect(() => {
+    fetchPakets();
+  }, []);
+
+  // Fungsi untuk menangani penghapusan data
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/pakets/${id}`);
+      // Perbarui state untuk menghapus item dari UI secara instan
+      setAllPaket(allPaket.filter(paket => paket.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus paket:", error);
+      // Di sini Anda bisa menambahkan notifikasi error untuk admin
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Memuat data paket...</div>;
+  }
 
   return (
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-slate-800">Manajemen Paket Umroh</h1>
-        {/* Ganti Link biasa dengan Button asChild */}
         <Button asChild>
           <Link href="/dashboard/paket/tambah">+ Tambah Paket</Link>
         </Button>
       </div>
 
-      {/* Ganti div dan table biasa dengan komponen Card dan Table ShadCN */}
       <div className="rounded-lg border shadow-md">
         <Table>
           <TableHeader>
@@ -50,8 +81,8 @@ export default async function PaketPage() {
                 <TableCell className="font-medium">{index + 1}</TableCell>
                 <TableCell>
                   {paket.fotoUrl ? (
-                    <Image
-                      src={paket.fotoUrl}
+                    <img
+                      src={paket.foto_url}
                       alt={`Foto ${paket.namaPaket}`}
                       width={80}
                       height={60}
@@ -62,7 +93,7 @@ export default async function PaketPage() {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{paket.namaPaket}</TableCell>
-                <TableCell>Rp {paket.harga.toLocaleString('id-ID')}</TableCell>
+                <TableCell>Rp {new Intl.NumberFormat('id-ID').format(paket.harga)}</TableCell>
                 <TableCell>{new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</TableCell>
                 <TableCell>{paket.sisaKursi}</TableCell>
                 <TableCell className="text-right">
@@ -70,7 +101,8 @@ export default async function PaketPage() {
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/dashboard/paket/edit/${paket.id}`}>Edit</Link>
                     </Button>
-                    <DeleteConfirmation id={paket.id} action={deletePaket}>
+                    {/* Panggil DeleteConfirmation dengan fungsi handleDelete */}
+                    <DeleteConfirmation onConfirm={() => handleDelete(paket.id)}>
                       Hapus
                     </DeleteConfirmation>
                   </div>

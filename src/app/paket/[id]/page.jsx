@@ -1,7 +1,9 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PrismaClient } from '@prisma/client';
-import { notFound } from 'next/navigation';
+import api from '@/lib/api'; // Menggunakan axios client
 import PublicNavbar from '@/components/shared/public-navbar';
 import Footer from '@/components/shared/footer';
 import StarRating from '@/components/ui/star-rating';
@@ -14,43 +16,58 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const prisma = new PrismaClient();
+export default function PaketDetailPage({ params }) {
+  const { id } = params;
+  const [paket, setPaket] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-// Fungsi untuk mengambil data satu paket (tetap sama)
-async function getPaket(id) {
-  const paket = await prisma.paket.findUnique({
-    where: { id: parseInt(id) },
-  });
-  if (!paket) {
-    notFound();
-  }
-  return paket;
-}
-
-// FUNGSI BARU: untuk generate metadata dinamis (SEO)
-export async function generateMetadata({ params: { id } }) {
-  const paket = await prisma.paket.findUnique({ where: { id: parseInt(id) } });
-
-  if (!paket) {
-    return {
-      title: "Paket Tidak Ditemukan",
-      description: "Paket umroh yang Anda cari tidak tersedia."
+  // Ambil data dari API Laravel saat komponen dimuat
+  useEffect(() => {
+    if (id) {
+      const fetchPaket = async () => {
+        try {
+          const response = await api.get(`/pakets/${id}`);
+          setPaket(response.data);
+        } catch (error) {
+          console.error("Gagal mengambil detail paket:", error);
+          // Handle not found error from API if needed
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchPaket();
     }
+  }, [id]);
+
+  // Tampilkan pesan loading
+  if (isLoading) {
+    return (
+        <div className="bg-white min-h-screen">
+            <PublicNavbar variant="solid" />
+            <div className="text-center py-40">Memuat detail paket...</div>
+            <Footer />
+        </div>
+    );
   }
 
-  return {
-    title: `${paket.namaPaket} - MU Travel`,
-    description: paket.deskripsi.substring(0, 160), // Ambil 160 karakter pertama untuk deskripsi
+  // Tampilkan pesan jika paket tidak ditemukan
+  if (!paket) {
+    return (
+        <div className="bg-white min-h-screen">
+            <PublicNavbar variant="solid" />
+            <div className="text-center py-40">
+                <h1 className="text-2xl font-bold">Paket Tidak Ditemukan</h1>
+                <p className="text-muted-foreground">Paket yang Anda cari mungkin sudah tidak tersedia.</p>
+                <Button asChild className="mt-4">
+                    <Link href="/">Kembali ke Home</Link>
+                </Button>
+            </div>
+            <Footer />
+        </div>
+    );
   }
-}
 
-
-// Komponen Halaman Utama
-export default async function PaketDetailPage({ params: { id } }) {
-  // Pengambilan data paket tetap sama di sini
-  const paket = await getPaket(id);
-
-  // ... (semua logika untuk whatsAppLink, fasilitas, dll. tetap sama)
+  // Setelah data siap, siapkan variabel lain
   const whatsAppNumber = "6281251112909";
   const message = `Assalamualaikum, saya ingin bertanya tentang Paket Umroh "${paket.namaPaket}" keberangkatan tanggal ${new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}.`;
   const whatsAppLink = `https://wa.me/${whatsAppNumber}?text=${encodeURIComponent(message)}`;
@@ -61,17 +78,10 @@ export default async function PaketDetailPage({ params: { id } }) {
       <PublicNavbar variant="solid" />
       <main className="pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          
-          {/* Judul dan Info Singkat di bagian atas untuk mobile */}
-          <div className="lg:hidden mb-6">
-            <p className="text-sm font-medium text-orange-600">MU Travel Balikpapan</p>
-            <h1 className="text-3xl font-extrabold text-gray-900 mt-1">{paket.namaPaket}</h1>
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
 
-            {/* KOLOM KIRI: GALERI GAMBAR */}
-            <div className="lg:sticky lg:top-28 space-y-4">
+            {/* KOLOM KIRI: GAMBAR */}
+            <div className="sticky top-28">
               <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
                 <Image
                   src={paket.fotoUrl}
@@ -80,26 +90,24 @@ export default async function PaketDetailPage({ params: { id } }) {
                   className="object-cover"
                 />
               </div>
-              {/* Anda bisa menambahkan galeri thumbnail di sini nanti jika mau */}
             </div>
 
             {/* KOLOM KANAN: DETAIL & AKSI */}
             <div className="space-y-6">
-              <div className="hidden lg:block"> {/* Sembunyikan judul ini di mobile */}
+              <div>
                 <p className="text-sm font-medium text-orange-600">MU Travel Balikpapan</p>
-                <h1 className="text-4xl font-extrabold text-gray-900 mt-1">{paket.namaPaket}</h1>
-              </div>
-              
-              <div className="flex items-center gap-4 border-b pb-6">
+                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mt-1">{paket.namaPaket}</h1>
+                <div className="mt-2 flex items-center gap-4">
                   <StarRating rating={paket.ratingHotelMakkah} />
                   <span className="text-sm text-gray-500">({paket.sisaKursi} sisa kuota)</span>
+                </div>
               </div>
 
               <p className="text-4xl font-bold text-gray-800">
                 Rp {paket.harga.toLocaleString('id-ID')}
               </p>
 
-              <div className="text-sm text-gray-600 space-y-2">
+              <div className="text-sm text-gray-600 space-y-2 border-t pt-6">
                  <div className="flex items-center gap-3"><Calendar size={16} /><span>Keberangkatan: {new Date(paket.tanggalKeberangkatan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
                  <div className="flex items-center gap-3"><Clock size={16} /><span>Durasi: {paket.durasi} Hari</span></div>
                  <div className="flex items-center gap-3"><Plane size={16} /><span>Maskapai: {paket.pesawat}</span></div>

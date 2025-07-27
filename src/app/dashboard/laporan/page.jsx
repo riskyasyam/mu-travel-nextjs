@@ -1,33 +1,53 @@
 'use client';
 
 import { useState } from 'react';
+import api from '@/lib/api'; // Menggunakan axios client
 import { Button } from '@/components/ui/button';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getFilteredPemesanan } from '@/app/lib/actions';
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, Download } from "lucide-react";
 
 export default function LaporanPage() {
+  // State untuk filter tanggal
   const [dateRange, setDateRange] = useState({
     from: new Date(new Date().setMonth(new Date().getMonth() - 1)), // Default: 1 bulan terakhir
     to: new Date(),
   });
+  
+  // State untuk menampung data dan status loading
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fungsi untuk mengambil data terfilter dari API Laravel
   const handleFilter = async () => {
     setIsLoading(true);
-    const result = await getFilteredPemesanan(dateRange);
-    setData(result);
-    setIsLoading(false);
+    try {
+      const response = await api.get('/laporan/pemesanan', { // Panggil endpoint API
+        params: {
+          from: dateRange.from.toISOString(),
+          to: dateRange.to.toISOString(),
+        }
+      });
+      setData(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data laporan:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // Fungsi untuk export tetap sama, karena ia memanggil API route terpisah
   const handleExport = () => {
+    if (!dateRange.from || !dateRange.to) {
+        alert("Silakan pilih rentang tanggal terlebih dahulu.");
+        return;
+    }
     const fromISO = dateRange.from.toISOString();
     const toISO = dateRange.to.toISOString();
-    window.open(`/api/export/pemesanan?from=${fromISO}&to=${toISO}`, '_blank');
+    // Endpoint ini perlu Anda buat di Laravel untuk generate file Excel
+    window.open(`${process.env.NEXT_PUBLIC_API_URL}/export/pemesanan?from=${fromISO}&to=${toISO}`, '_blank');
   };
 
   return (
@@ -66,7 +86,7 @@ export default function LaporanPage() {
         <Button onClick={handleFilter} disabled={isLoading}>{isLoading ? 'Memuat...' : 'Terapkan Filter'}</Button>
         {data.length > 0 && (
             <Button onClick={handleExport} variant="secondary" className="flex items-center gap-2">
-                <Download size={16}/> Export ke CSV
+                <Download size={16}/> Export ke Excel
             </Button>
         )}
       </div>
@@ -93,7 +113,9 @@ export default function LaporanPage() {
             ))}
             {data.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">Silakan terapkan filter untuk melihat data.</TableCell>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                        {isLoading ? 'Sedang memuat data...' : 'Silakan terapkan filter untuk melihat data.'}
+                    </TableCell>
                 </TableRow>
             )}
           </TableBody>

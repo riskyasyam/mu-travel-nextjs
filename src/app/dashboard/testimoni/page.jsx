@@ -1,16 +1,53 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { PrismaClient } from '@prisma/client';
-import { deleteTestimoni } from '@/app/lib/actions';
-import { Button } from '@/components/ui/button'; // Impor Button ShadCN
-import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation'; // Impor komponen baru kita
+import api from '@/lib/api'; // Menggunakan axios client
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
 
-const prisma = new PrismaClient();
+export default function TestimoniPage() {
+  const [allTestimoni, setAllTestimoni] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-export default async function TestimoniPage() {
-  const allTestimoni = await prisma.testimoni.findMany({
-    orderBy: { createdAt: 'desc' },
-  });
+  // Fungsi untuk mengambil data dari API Laravel
+  const fetchTestimoni = async () => {
+    try {
+      const response = await api.get('/testimonis');
+      setAllTestimoni(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data testimoni:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ambil data saat komponen pertama kali dimuat
+  useEffect(() => {
+    fetchTestimoni();
+  }, []);
+
+  // Fungsi untuk menangani penghapusan data
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/testimonis/${id}`);
+      // Perbarui state untuk menghapus item dari UI secara instan
+      setAllTestimoni(allTestimoni.filter(testi => testi.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus testimoni:", error);
+      // Di sini Anda bisa menambahkan notifikasi error untuk admin
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Memuat data testimoni...</div>;
+  }
 
   return (
     <div className="p-8">
@@ -23,30 +60,31 @@ export default async function TestimoniPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {allTestimoni.map((testi) => (
-          <div key={testi.id} className="bg-white rounded-lg shadow-md flex flex-col overflow-hidden border">
-            {testi.fotoUrl && (
+          <Card key={testi.id} className="group overflow-hidden flex flex-col">
+            <CardContent className="p-0">
               <div className="relative w-full aspect-square">
-                <Image
-                  src={testi.fotoUrl}
-                  alt={testi.namaJamaah}
+                <img
+                  src={testi.foto_url}
+                alt={testi.namaJamaah}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
-            )}
-            <div className='p-4 flex flex-col flex-grow'>
-                <h3 className='font-bold text-slate-800'>{testi.namaJamaah}</h3>
-                <p className='text-sm text-slate-600 mt-2 flex-grow'>"{testi.deskripsiTestimoni}"</p>
-            </div>
-            <div className="p-4 border-t flex justify-end gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link href={`/dashboard/testimoni/edit/${testi.id}`}>Edit</Link>
-              </Button>
-              <DeleteConfirmation id={testi.id} action={deleteTestimoni}>
-                Hapus
-              </DeleteConfirmation>
-            </div>
-          </div>
+            </CardContent>
+            <CardFooter className="p-4 flex flex-col items-start flex-grow">
+              <h3 className='font-bold text-slate-800'>{testi.namaJamaah}</h3>
+              <p className='text-sm text-slate-600 mt-2 flex-grow'>"{testi.deskripsiTestimoni}"</p>
+              <div className="w-full mt-4 flex justify-end gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/dashboard/testimoni/edit/${testi.id}`}>Edit</Link>
+                </Button>
+                {/* Gunakan DeleteConfirmation dengan fungsi onConfirm */}
+                <DeleteConfirmation onConfirm={() => handleDelete(testi.id)}>
+                  Hapus
+                </DeleteConfirmation>
+              </div>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>

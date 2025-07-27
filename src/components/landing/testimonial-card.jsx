@@ -13,8 +13,8 @@ const TestimonialCard = ({ testimoni }) => {
 
         {/* 3. Gambar screenshot dari DB dengan object-contain di dalam "jendela" */}
         <div className="relative w-full h-full">
-          <Image
-            src={testimoni.fotoUrl}
+          <img
+            src={testimoni.foto_url}
             alt={`Testimoni dari ${testimoni.namaJamaah}`}
             fill
             className="object-contain" // <-- object-contain memastikan seluruh gambar muat

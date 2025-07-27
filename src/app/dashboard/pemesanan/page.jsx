@@ -1,13 +1,62 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getAllPemesanan, deletePemesanan } from '@/app/lib/actions';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
 import Search from '@/components/dashboard/search';
 
-export default async function PemesananPage({ searchParams }) {
-  const query = searchParams?.query || '';
-  const allPemesanan = await getAllPemesanan(query);
+export default function PemesananPage() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('query') || '';
+
+  const [allPemesanan, setAllPemesanan] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fungsi untuk mengambil data dari API Laravel
+  const fetchPemesanan = async (currentQuery) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/pemesanans', {
+        params: { query: currentQuery }
+      });
+      setAllPemesanan(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data pemesanan:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ambil data saat komponen dimuat dan setiap kali query pencarian berubah
+  useEffect(() => {
+    fetchPemesanan(query);
+  }, [query]);
+
+  // Fungsi untuk menangani penghapusan data
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/pemesanans/${id}`);
+      // Perbarui state untuk menghapus item dari UI secara instan
+      setAllPemesanan(allPemesanan.filter(p => p.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus pemesanan:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Memuat data pemesanan...</div>;
+  }
 
   return (
     <div className="p-8">
@@ -37,17 +86,28 @@ export default async function PemesananPage({ searchParams }) {
                 <TableCell className="font-medium">{pesanan.jamaah.namaLengkap}</TableCell>
                 <TableCell>{pesanan.paket.namaPaket}</TableCell>
                 <TableCell>{new Date(pesanan.tanggalPemesanan).toLocaleDateString('id-ID')}</TableCell>
-                <TableCell>{pesanan.statusPembayaran}</TableCell>
+                <TableCell>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {pesanan.statusPembayaran.replace('_', ' ')}
+                    </span>
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-2">
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/dashboard/pemesanan/edit/${pesanan.id}`}>Edit</Link>
                     </Button>
-                    <DeleteConfirmation id={pesanan.id} action={deletePemesanan}>Hapus</DeleteConfirmation>
+                    <DeleteConfirmation onConfirm={() => handleDelete(pesanan.id)}>Hapus</DeleteConfirmation>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
+            {allPemesanan.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24">
+                        Data pemesanan tidak ditemukan.
+                    </TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

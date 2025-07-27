@@ -1,3 +1,4 @@
+// File: src/components/landing/documentation-gallery.jsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,18 +9,25 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import { motion } from 'framer-motion';
-import { getDokumentasi } from '@/app/lib/actions'; // <-- 1. Impor Server Action
+import api from '@/lib/api'; // <-- 1. Impor API client kita
 
 const DocumentationGallery = () => {
-  // 2. Buat state untuk menampung data dari database
+  // 2. Buat state untuk menampung data dari database dan status loading
   const [images, setImages] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 3. Ambil data saat komponen pertama kali dimuat
+  // 3. Ambil data dari API Laravel saat komponen pertama kali dimuat
   useEffect(() => {
     const fetchDokumentasi = async () => {
-      const data = await getDokumentasi();
-      setImages(data);
+      try {
+        const response = await api.get('/dokumentasi/landing');
+        setImages(response.data);
+      } catch (error) {
+        console.error("Gagal mengambil data dokumentasi:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchDokumentasi();
@@ -30,9 +38,18 @@ const DocumentationGallery = () => {
     visible: { y: 0, opacity: 1, transition: { duration: 0.7, ease: "easeOut" } },
   };
   
-  // Tambahkan pengecekan jika data belum ada atau kosong
+  // Tampilkan pesan loading atau jangan render apa-apa jika data belum ada
+  if (isLoading) {
+    return (
+        <section className="bg-slate-50 py-20 md:py-28 text-center">
+            <p className="text-gray-500">Memuat galeri dokumentasi...</p>
+        </section>
+    );
+  }
+
+  // Jangan render section jika tidak ada gambar sama sekali
   if (images.length === 0) {
-    return null; // Atau tampilkan komponen loading
+    return null;
   }
 
   return (
@@ -62,9 +79,8 @@ const DocumentationGallery = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Image
-              // 4. Gunakan data dari state
-              src={images[activeIndex].fotoUrl}
+            <img
+              src={images[activeIndex].foto_url}
               alt={images[activeIndex].deskripsi || 'Dokumentasi Jamaah'}
               fill
               className="object-cover transition-opacity duration-300"
@@ -89,9 +105,8 @@ const DocumentationGallery = () => {
                       <div className={`relative aspect-square rounded-md overflow-hidden transition-all duration-300 
                         ${index === activeIndex ? 'ring-4 ring-offset-2 ring-orange-400' : 'opacity-70 group-hover:opacity-100'}`
                       }>
-                        <Image
-                          // 4. Gunakan data dari state
-                          src={image.fotoUrl}
+                        <img
+                          src={image.foto_url}
                           alt={image.deskripsi || 'Thumbnail Dokumentasi'}
                           fill
                           className="object-cover"

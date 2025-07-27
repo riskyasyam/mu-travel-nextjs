@@ -13,13 +13,13 @@ const airlineLogos = {
 
 const PaketCard = ({ paket }) => {
   const airlineName = paket.pesawat.toLowerCase();
-  const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.png';
+const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.png';
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 flex flex-col">
       <div className="relative w-full h-48 bg-gray-200 rounded-t-xl">
-        <Image
-          src={paket.fotoUrl}
+        <img
+          src={paket.foto_url}
           alt={`Foto ${paket.namaPaket}`}
           fill
           className="object-cover rounded-t-xl" // <-- KEMBALIKAN KE SINI

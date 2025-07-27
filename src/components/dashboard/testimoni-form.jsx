@@ -1,63 +1,113 @@
 'use client';
 
-import { createTestimoni, updateTestimoni } from "@/app/lib/actions";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from "next/image";
-import { Button } from "@/components/ui/button"; // Impor Button dari ShadCN
-import { Input } from "@/components/ui/input";   // Impor Input dari ShadCN
-import { Label } from "@/components/ui/label";   // Impor Label dari ShadCN
-import { Textarea } from "@/components/ui/textarea"; // Impor Textarea dari ShadCN
+import api from '@/lib/api'; // Menggunakan axios client
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function TestimoniForm({ testimoni }) {
+  const router = useRouter();
   const isEditMode = Boolean(testimoni);
-  const action = isEditMode ? updateTestimoni.bind(null, testimoni.id) : createTestimoni;
+
+  // State untuk data form
+  const [namaJamaah, setNamaJamaah] = useState(testimoni?.namaJamaah || '');
+  const [deskripsiTestimoni, setDeskripsiTestimoni] = useState(testimoni?.deskripsiTestimoni || '');
+  const [fotoUrl, setFotoUrl] = useState(null); // State untuk file
+  
+  // State untuk UI
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setIsLoading(true);
+    setErrorMessage('');
+
+    const formData = new FormData();
+    formData.append('namaJamaah', namaJamaah);
+    formData.append('deskripsiTestimoni', deskripsiTestimoni);
+    
+    if (fotoUrl) {
+      formData.append('fotoUrl', fotoUrl);
+    }
+    
+    try {
+      if (isEditMode) {
+        // Untuk update, kirim dengan metode POST dan _method: 'PUT'
+        formData.append('_method', 'PUT');
+        await api.post(`/testimonis/${testimoni.id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      } else {
+        // Untuk create, gunakan POST biasa
+        await api.post('/testimonis', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+      }
+      // Jika berhasil, arahkan kembali ke halaman daftar
+      router.push('/dashboard/testimoni');
+      router.refresh(); // Meminta Next.js untuk mengambil data baru di halaman daftar
+
+    } catch (error) {
+      console.error("Gagal menyimpan data testimoni:", error.response?.data);
+      setErrorMessage(error.response?.data?.message || "Terjadi kesalahan.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    // Gunakan space-y-6 untuk jarak vertikal yang konsisten
-    <form action={action} encType="multipart/form-data" className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       
-      {/* Input untuk Nama Jamaah */}
       <div className="space-y-2">
         <Label htmlFor="namaJamaah">Nama Jamaah</Label>
         <Input
           type="text"
           name="namaJamaah"
           id="namaJamaah"
-          defaultValue={testimoni?.namaJamaah || ''}
-          placeholder="Contoh: Ibu Tuti"
+          value={namaJamaah}
+          onChange={(e) => setNamaJamaah(e.target.value)}
+          placeholder="Contoh: Bapak Ahmad"
           required
         />
       </div>
 
-      {/* Input untuk Deskripsi Testimoni */}
       <div className="space-y-2">
         <Label htmlFor="deskripsiTestimoni">Isi Testimoni</Label>
         <Textarea
           id="deskripsiTestimoni"
           name="deskripsiTestimoni"
           rows={5}
-          defaultValue={testimoni?.deskripsiTestimoni || ''}
+          value={deskripsiTestimoni}
+          onChange={(e) => setDeskripsiTestimoni(e.target.value)}
           placeholder="Tuliskan testimoni dari jamaah di sini..."
           required
         />
       </div>
 
-      {/* Input untuk Foto (Screenshot WA) */}
       <div className="space-y-2">
         <Label htmlFor="fotoUrl">
           {isEditMode ? 'Ganti Foto Testimoni' : 'Upload Foto Testimoni'}
         </Label>
-        {/* Input file tetap menggunakan style kustom karena ShadCN tidak punya komponen file khusus */}
         <Input
           type="file"
           id="fotoUrl"
           name="fotoUrl"
           accept="image/*"
-          className="mt-1 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          className="cursor-pointer"
+          onChange={(e) => setFotoUrl(e.target.files[0])}
           required={!isEditMode}
         />
       </div>
 
-      {/* Tampilkan preview foto jika mode Edit */}
       {isEditMode && testimoni?.fotoUrl && (
         <div>
           <Label>Foto Saat Ini:</Label>
@@ -67,10 +117,13 @@ export default function TestimoniForm({ testimoni }) {
         </div>
       )}
 
-      {/* Tombol Aksi */}
+      {errorMessage && (
+        <p className="text-sm text-destructive">{errorMessage}</p>
+      )}
+
       <div className="flex justify-end pt-4">
-        <Button type="submit">
-          {isEditMode ? 'Update Testimoni' : 'Simpan Testimoni'}
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Menyimpan...' : (isEditMode ? 'Update Testimoni' : 'Simpan Testimoni')}
         </Button>
       </div>
     </form>

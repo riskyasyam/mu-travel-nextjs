@@ -1,103 +1,123 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { getJamaahById } from '@/app/lib/actions';
+import { useSearchParams } from 'next/navigation';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Edit } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
+import Search from '@/components/dashboard/search';
+import { Eye } from 'lucide-react';
 
-// Komponen kecil untuk menampilkan baris data agar lebih rapi
-const DetailItem = ({ label, value }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 py-3 border-b">
-    <dt className="text-sm font-medium text-muted-foreground">{label}</dt>
-    <dd className="sm:col-span-2 text-sm text-gray-900 font-semibold">{value || '-'}</dd>
-  </div>
-);
+export default function JamaahPage() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('query') || '';
 
-export default async function DetailJamaahPage({ params: { id } }) {
-  const jamaah = await getJamaahById(id);
+  const [allJamaah, setAllJamaah] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchJamaah = async (currentQuery) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/jamaahs', {
+        params: { query: currentQuery }
+      });
+      setAllJamaah(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data jamaah:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchJamaah(query);
+  }, [query]);
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/jamaahs/${id}`);
+      setAllJamaah(allJamaah.filter(jamaah => jamaah.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus jamaah:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Memuat data jamaah...</div>;
+  }
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
-      <div className="mb-6">
-          <Button asChild variant="outline" size="sm" className="mb-4">
-            <Link href="/dashboard/jamaah" className='flex items-center gap-2'>
-              <ArrowLeft size={14}/> Kembali ke Daftar Jamaah
-            </Link>
-          </Button>
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-800">{jamaah.namaLengkap}</h1>
-              <p className="text-muted-foreground">Detail Lengkap Data Jamaah</p>
-            </div>
-            <Button asChild>
-              <Link href={`/dashboard/jamaah/edit/${jamaah.id}`} className="flex items-center gap-2">
-                <Edit size={16}/> Edit Data
-              </Link>
-            </Button>
-          </div>
+    <div className="p-8">
+      <div className="flex justify-between items-center mb-6 gap-4">
+        <h1 className="text-3xl font-bold text-slate-800">Manajemen Data Jamaah</h1>
+        <Button asChild>
+          <Link href="/dashboard/jamaah/tambah">+ Tambah Jamaah</Link>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Kolom Kiri: Informasi Pribadi */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informasi Pribadi</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="space-y-1">
-                <DetailItem label="Nama Lengkap" value={jamaah.namaLengkap} />
-                <DetailItem label="Nomor KTP" value={jamaah.nomorKtp} />
-                <DetailItem label="Nomor Paspor" value={jamaah.nomorPaspor || 'Belum ada'} />
-                <DetailItem label="Tempat Lahir" value={jamaah.tempatLahir} />
-                <DetailItem label="Tanggal Lahir" value={new Date(jamaah.tanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })} />
-                <DetailItem label="Jenis Kelamin" value={jamaah.jenisKelamin} />
-                <DetailItem label="Alamat" value={jamaah.alamat} />
-                <DetailItem label="Nomor Telepon" value={jamaah.nomorTelepon} />
-                <DetailItem label="Email" value={jamaah.email || 'Tidak ada'} />
-                <DetailItem label="Pekerjaan" value={jamaah.pekerjaan || 'Tidak ada'} />
-              </dl>
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Kolom Kanan: Dokumen */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Scan KTP</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {jamaah.scanKtpUrl ? (
-                <div>
-                  <Image src={jamaah.scanKtpUrl} alt="Scan KTP" width={300} height={200} className="rounded-md border w-full h-auto object-contain" />
-                  <Button asChild variant="secondary" className="mt-4 w-full">
-                    <a href={jamaah.scanKtpUrl} download>Download KTP</a>
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Belum di-upload.</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Scan Paspor</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {jamaah.scanPasporUrl ? (
-                <div>
-                  <Image src={jamaah.scanPasporUrl} alt="Scan Paspor" width={300} height={200} className="rounded-md border w-full h-auto object-contain" />
-                  <Button asChild variant="secondary" className="mt-4 w-full">
-                    <a href={jamaah.scanPasporUrl} download>Download Paspor</a>
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">Belum di-upload.</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      <div className="mb-4">
+        <Search placeholder="Cari nama, KTP, atau No. HP..." />
+      </div>
+
+      <div className="rounded-lg border shadow-md">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nama Lengkap</TableHead>
+              <TableHead>No. KTP</TableHead>
+              <TableHead>No. Telepon</TableHead>
+              <TableHead>Dokumen</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {allJamaah.map((jamaah) => (
+              <TableRow key={jamaah.id}>
+                <TableCell className="font-medium">{jamaah.namaLengkap}</TableCell>
+                <TableCell>{jamaah.nomorKtp}</TableCell>
+                <TableCell>{jamaah.nomorTelepon}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    {jamaah.scanKtpUrl ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={jamaah.scanKtpUrl} download>KTP</a>
+                      </Button>
+                    ) : null}
+                    {jamaah.scanPasporUrl ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <a href={jamaah.scanPasporUrl} download>Paspor</a>
+                      </Button>
+                    ) : null}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end items-center gap-2">
+                    <Button asChild variant="ghost" size="icon" title="Lihat Detail">
+                        <Link href={`/dashboard/jamaah/detail/${jamaah.id}`}>
+                            <Eye className="h-4 w-4" />
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href={`/dashboard/jamaah/edit/${jamaah.id}`}>Edit</Link>
+                    </Button>
+                    <DeleteConfirmation onConfirm={() => handleDelete(jamaah.id)}>
+                      Hapus
+                    </DeleteConfirmation>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

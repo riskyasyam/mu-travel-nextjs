@@ -1,4 +1,9 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation'; // Hook untuk membaca URL params
+import api from '@/lib/api'; // Menggunakan axios client
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -8,15 +13,52 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getAllJamaah } from '@/app/lib/actions';
 import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
 import Search from '@/components/dashboard/search';
-import { deleteJamaah } from '@/app/lib/actions';
-import { Eye } from 'lucide-react'; // Impor ikon mata
+import { Eye } from 'lucide-react';
 
-export default async function JamaahPage({ searchParams }) {
-  const query = searchParams?.query || '';
-  const allJamaah = await getAllJamaah(query);
+export default function JamaahPage() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get('query') || '';
+
+  const [allJamaah, setAllJamaah] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fungsi untuk mengambil data dari API Laravel
+  const fetchJamaah = async (currentQuery) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/jamaahs', {
+        params: { query: currentQuery }
+      });
+      setAllJamaah(response.data);
+    } catch (error) {
+      console.error("Gagal mengambil data jamaah:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Ambil data saat komponen dimuat dan setiap kali query pencarian berubah
+  useEffect(() => {
+    fetchJamaah(query);
+  }, [query]);
+
+  // Fungsi untuk menangani penghapusan data
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/jamaahs/${id}`);
+      // Perbarui state untuk menghapus item dari UI secara instan
+      setAllJamaah(allJamaah.filter(jamaah => jamaah.id !== id));
+    } catch (error) {
+      console.error("Gagal menghapus jamaah:", error);
+      // Di sini Anda bisa menambahkan notifikasi error untuk admin
+    }
+  };
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Memuat data jamaah...</div>;
+  }
 
   return (
     <div className="p-8">
@@ -38,6 +80,9 @@ export default async function JamaahPage({ searchParams }) {
               <TableHead>Nama Lengkap</TableHead>
               <TableHead>No. KTP</TableHead>
               <TableHead>No. Telepon</TableHead>
+              <TableHead>No. Paspor</TableHead> {/* <-- Kolom Baru */}
+              <TableHead>Jenis Kelamin</TableHead> {/* <-- Kolom Baru */}
+              <TableHead>Alamat</TableHead>
               <TableHead>Dokumen</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
@@ -48,6 +93,9 @@ export default async function JamaahPage({ searchParams }) {
                 <TableCell className="font-medium">{jamaah.namaLengkap}</TableCell>
                 <TableCell>{jamaah.nomorKtp}</TableCell>
                 <TableCell>{jamaah.nomorTelepon}</TableCell>
+                <TableCell>{jamaah.nomorPaspor || '-'}</TableCell> {/* <-- Data Baru */}
+                <TableCell>{jamaah.jenisKelamin}</TableCell> {/* <-- Data Baru */}
+                <TableCell>{jamaah.alamat}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
                     {jamaah.scanKtpUrl ? (
@@ -64,18 +112,15 @@ export default async function JamaahPage({ searchParams }) {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-2">
-                    
-                    {/* --- TOMBOL BARU UNTUK MELIHAT DETAIL --- */}
                     <Button asChild variant="ghost" size="icon" title="Lihat Detail">
                         <Link href={`/dashboard/jamaah/detail/${jamaah.id}`}>
                             <Eye className="h-4 w-4" />
                         </Link>
                     </Button>
-
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/dashboard/jamaah/edit/${jamaah.id}`}>Edit</Link>
                     </Button>
-                    <DeleteConfirmation id={jamaah.id} action={deleteJamaah}>
+                    <DeleteConfirmation onConfirm={() => handleDelete(jamaah.id)}>
                       Hapus
                     </DeleteConfirmation>
                   </div>

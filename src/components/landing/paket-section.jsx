@@ -1,12 +1,32 @@
-'use client'; // <-- Tetap client component karena ada animasi
+'use client'; 
 
+import { useEffect, useState } from 'react'; // <-- 1. Impor hook
 import { motion } from 'framer-motion';
-import PaketCard from './paket-card'; // Pastikan path ini benar
+import api from '@/lib/api'; // <-- 2. Impor API client kita
+import PaketCard from './paket-card';
 
-// 1. Komponen sekarang menerima 'paketUmroh' sebagai props
-const PaketSection = ({ paketUmroh }) => {
-  // 2. Logika useState dan useEffect untuk fetch data DIHAPUS
+const PaketSection = () => {
+  // 3. Buat state untuk menampung data paket dan status loading
+  const [paketUmroh, setPaketUmroh] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // 4. Ambil data dari API Laravel saat komponen pertama kali dimuat
+  useEffect(() => {
+    async function loadPaket() {
+      try {
+        const response = await api.get('/pakets/landing');
+        setPaketUmroh(response.data);
+      } catch (error) {
+        console.error("Gagal mengambil data paket dari API:", error);
+        // Anda bisa menambahkan state untuk error di sini jika perlu
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadPaket();
+  }, []); // Array dependensi kosong agar hanya berjalan sekali
+
+  // Varian animasi (tetap sama)
   const containerVariants = {
     hidden: {},
     visible: {
@@ -28,9 +48,13 @@ const PaketSection = ({ paketUmroh }) => {
     },
   };
   
-  // Tambahkan pengecekan jika karena suatu hal datanya kosong
-  if (!paketUmroh || paketUmroh.length === 0) {
-    return null;
+  // Tampilkan pesan loading jika data sedang diambil
+  if (isLoading) {
+    return (
+        <section id="paket" className="bg-slate-50 py-20 md:py-28 text-center">
+            <p className="text-gray-500">Memuat paket umroh...</p>
+        </section>
+    );
   }
 
   return (
@@ -52,7 +76,6 @@ const PaketSection = ({ paketUmroh }) => {
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
         >
-          {/* 3. Langsung map dari props 'paketUmroh' */}
           {paketUmroh.map((paket) => (
             <motion.div key={paket.id} variants={itemVariants}>
               <PaketCard paket={paket} />
