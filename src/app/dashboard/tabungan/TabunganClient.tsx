@@ -1,30 +1,39 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import api from '@/lib/api';
 import CurrencyInput from '@/components/ui/currency-input';
 import Search from '@/components/dashboard/search';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Eye } from 'lucide-react';
 
-// --- KOMPONEN DIALOG DETAIL TABUNGAN (YANG HILANG) ---
-function DetailTabunganDialog({ jamaah, onActionSuccess }) {
+type Jamaah = {
+  id: number;
+  namaLengkap: string;
+  jumlahSetoran: number;
+  totalTabungan: number;
+};
+
+type Setoran = {
+  id: number;
+  jumlahSetoran: number;
+  created_at: string;
+};
+
+function DetailTabunganDialog({ jamaah, onActionSuccess }: { jamaah: Jamaah; onActionSuccess: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<Setoran[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // Fungsi untuk mengambil riwayat setoran saat dialog dibuka
   const fetchHistory = useCallback(async () => {
     if (!isOpen) return;
     setIsLoadingHistory(true);
     try {
-      // Panggil endpoint untuk mengambil riwayat tabungan jamaah spesifik
       const response = await api.get(`/jamaahs/${jamaah.id}/tabungans`);
       setHistory(response.data);
     } catch (error) {
@@ -37,9 +46,8 @@ function DetailTabunganDialog({ jamaah, onActionSuccess }) {
   useEffect(() => {
     fetchHistory();
   }, [isOpen, fetchHistory]);
-  
-  // Fungsi untuk menangani penambahan setoran baru
-  const handleAddDeposit = async (event) => {
+
+  const handleAddDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     try {
@@ -48,10 +56,9 @@ function DetailTabunganDialog({ jamaah, onActionSuccess }) {
         jumlahSetoran: formData.get('jumlahSetoran'),
         keterangan: formData.get('keterangan'),
       });
-      // Refresh data di tabel utama dan di dalam dialog ini
       onActionSuccess();
       fetchHistory();
-      event.target.reset(); // Reset form fields after submission
+      event.currentTarget.reset();
     } catch (error) {
       console.error("Gagal menambah setoran:", error);
     }
@@ -73,7 +80,7 @@ function DetailTabunganDialog({ jamaah, onActionSuccess }) {
             Total Saldo Saat Ini: <span className="font-bold text-green-600">Rp {totalTabungan.toLocaleString('id-ID')}</span>
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
           <div className="max-h-96 overflow-y-auto pr-4">
             <h4 className="font-semibold mb-2">Riwayat Setoran</h4>
@@ -115,16 +122,14 @@ function DetailTabunganDialog({ jamaah, onActionSuccess }) {
   );
 }
 
-
-// --- KOMPONEN UTAMA HALAMAN TABUNGAN ---
-export default function TabunganPage() {
+export default function TabunganClient() {
   const searchParams = useSearchParams();
   const query = searchParams.get('query') || '';
 
-  const [jamaahWithSaldo, setJamaahWithSaldo] = useState([]);
+  const [jamaahWithSaldo, setJamaahWithSaldo] = useState<Jamaah[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPageData = useCallback(async (currentQuery) => {
+  const fetchPageData = useCallback(async (currentQuery: string) => {
     setIsLoading(true);
     try {
       const summaryRes = await api.get('/tabungan/summary', { params: { query: currentQuery } });
@@ -148,13 +153,10 @@ export default function TabunganPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-slate-800">Rekapitulasi Tabungan Jamaah</h1>
-        {/* Tombol Tambah Setoran Global Dihapus karena sudah ada di dalam detail */}
       </div>
-
       <div className="mb-4">
         <Search placeholder="Cari nama jamaah..." />
       </div>
-
       <div className="rounded-lg border shadow-md">
         <Table>
           <TableHeader>
@@ -178,12 +180,12 @@ export default function TabunganPage() {
                 </TableCell>
               </TableRow>
             ))}
-             {jamaahWithSaldo.length === 0 && (
-                <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
-                        Data tidak ditemukan.
-                    </TableCell>
-                </TableRow>
+            {jamaahWithSaldo.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                  Data tidak ditemukan.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>

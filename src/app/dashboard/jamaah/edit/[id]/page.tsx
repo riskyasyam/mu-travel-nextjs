@@ -1,18 +1,36 @@
-// File: src/app/dashboard/jamaah/edit/[id]/page.jsx
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import api from '@/lib/api';
 import JamaahForm from '@/components/dashboard/jamaah-form';
 
-// 1. Destrukturisasi 'id' langsung di dalam argumen fungsi
-export default function EditJamaahPage({ params: { id } }) {
+interface Jamaah {
+  id: number;
+  namaLengkap: string;
+  nomorKtp: string;
+  nomorPaspor?: string | null;
+  tempatLahir: string;
+  tanggalLahir: string;
+  jenisKelamin: string;
+  alamat: string;
+  nomorTelepon: string;
+  email?: string | null;
+  pekerjaan?: string | null;
+  scanKtpUrl?: string | null;
+  scanPasporUrl?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
 
-  const [jamaah, setJamaah] = useState(null);
+export default function EditJamaahPage() {
+  const params = useParams();
+  const id = params?.id as string;
+
+  const [jamaah, setJamaah] = useState<Jamaah | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // 2. Gunakan 'id' yang sudah tersedia
     if (id) {
       const fetchJamaahDetail = async () => {
         setIsLoading(true);
@@ -27,15 +45,10 @@ export default function EditJamaahPage({ params: { id } }) {
       };
       fetchJamaahDetail();
     }
-  }, [id]); // 3. Dependensi tetap 'id'
+  }, [id]);
 
-  if (isLoading) {
-    return <div className="p-8 text-center">Memuat data jamaah...</div>;
-  }
-
-  if (!jamaah) {
-    return <div className="p-8 text-center">Data jamaah tidak ditemukan.</div>;
-  }
+  if (isLoading) return <div className="p-8 text-center">Memuat data jamaah...</div>;
+  if (!jamaah) return <div className="p-8 text-center">Data jamaah tidak ditemukan.</div>;
 
   return (
     <div className="p-8">

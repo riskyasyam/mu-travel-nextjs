@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation'; // Hook untuk membaca URL params
-import api from '@/lib/api'; // Menggunakan axios client
+import { useSearchParams } from 'next/navigation';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -12,47 +12,54 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from '@/components/ui/table';
 import { DeleteConfirmation } from '@/components/dashboard/delete-confirmation';
 import Search from '@/components/dashboard/search';
 import { Eye } from 'lucide-react';
 
-export default function JamaahPage() {
+interface Jamaah {
+  id: number;
+  namaLengkap: string;
+  nomorKtp: string;
+  nomorTelepon: string;
+  nomorPaspor?: string;
+  jenisKelamin: string;
+  alamat: string;
+  scanKtpUrl?: string;
+  scanPasporUrl?: string;
+}
+
+export default function JamaahClient() {
   const searchParams = useSearchParams();
   const query = searchParams.get('query') || '';
 
-  const [allJamaah, setAllJamaah] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [allJamaah, setAllJamaah] = useState<Jamaah[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Fungsi untuk mengambil data dari API Laravel
-  const fetchJamaah = async (currentQuery) => {
+  const fetchJamaah = async (currentQuery: string) => {
     setIsLoading(true);
     try {
       const response = await api.get('/jamaahs', {
-        params: { query: currentQuery }
+        params: { query: currentQuery },
       });
       setAllJamaah(response.data);
     } catch (error) {
-      console.error("Gagal mengambil data jamaah:", error);
+      console.error('Gagal mengambil data jamaah:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Ambil data saat komponen dimuat dan setiap kali query pencarian berubah
   useEffect(() => {
     fetchJamaah(query);
   }, [query]);
 
-  // Fungsi untuk menangani penghapusan data
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: number) => {
     try {
       await api.delete(`/jamaahs/${id}`);
-      // Perbarui state untuk menghapus item dari UI secara instan
-      setAllJamaah(allJamaah.filter(jamaah => jamaah.id !== id));
+      setAllJamaah(allJamaah.filter(j => j.id !== id));
     } catch (error) {
-      console.error("Gagal menghapus jamaah:", error);
-      // Di sini Anda bisa menambahkan notifikasi error untuk admin
+      console.error('Gagal menghapus jamaah:', error);
     }
   };
 
@@ -80,42 +87,42 @@ export default function JamaahPage() {
               <TableHead>Nama Lengkap</TableHead>
               <TableHead>No. KTP</TableHead>
               <TableHead>No. Telepon</TableHead>
-              <TableHead>No. Paspor</TableHead> {/* <-- Kolom Baru */}
-              <TableHead>Jenis Kelamin</TableHead> {/* <-- Kolom Baru */}
+              <TableHead>No. Paspor</TableHead>
+              <TableHead>Jenis Kelamin</TableHead>
               <TableHead>Alamat</TableHead>
               <TableHead>Dokumen</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {allJamaah.map((jamaah) => (
+            {allJamaah.map(jamaah => (
               <TableRow key={jamaah.id}>
                 <TableCell className="font-medium">{jamaah.namaLengkap}</TableCell>
                 <TableCell>{jamaah.nomorKtp}</TableCell>
                 <TableCell>{jamaah.nomorTelepon}</TableCell>
-                <TableCell>{jamaah.nomorPaspor || '-'}</TableCell> {/* <-- Data Baru */}
-                <TableCell>{jamaah.jenisKelamin}</TableCell> {/* <-- Data Baru */}
+                <TableCell>{jamaah.nomorPaspor || '-'}</TableCell>
+                <TableCell>{jamaah.jenisKelamin}</TableCell>
                 <TableCell>{jamaah.alamat}</TableCell>
                 <TableCell>
                   <div className="flex gap-2">
-                    {jamaah.scanKtpUrl ? (
+                    {jamaah.scanKtpUrl && (
                       <Button variant="outline" size="sm" asChild>
                         <a href={jamaah.scanKtpUrl} download>KTP</a>
                       </Button>
-                    ) : null}
-                    {jamaah.scanPasporUrl ? (
+                    )}
+                    {jamaah.scanPasporUrl && (
                       <Button variant="outline" size="sm" asChild>
                         <a href={jamaah.scanPasporUrl} download>Paspor</a>
                       </Button>
-                    ) : null}
+                    )}
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end items-center gap-2">
                     <Button asChild variant="ghost" size="icon" title="Lihat Detail">
-                        <Link href={`/dashboard/jamaah/detail/${jamaah.id}`}>
-                            <Eye className="h-4 w-4" />
-                        </Link>
+                      <Link href={`/dashboard/jamaah/detail/${jamaah.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
                     </Button>
                     <Button asChild variant="outline" size="sm">
                       <Link href={`/dashboard/jamaah/edit/${jamaah.id}`}>Edit</Link>
