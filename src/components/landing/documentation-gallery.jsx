@@ -82,8 +82,7 @@ const DocumentationGallery = () => {
             <img
               src={images[activeIndex].foto_url}
               alt={images[activeIndex].deskripsi || 'Dokumentasi Jamaah'}
-              fill
-              className="object-cover transition-opacity duration-300"
+              className="w-full h-full object-cover transition-opacity duration-300 rounded-xl"
               key={activeIndex}
             />
           </motion.div>
@@ -108,8 +107,7 @@ const DocumentationGallery = () => {
                         <img
                           src={image.foto_url}
                           alt={image.deskripsi || 'Thumbnail Dokumentasi'}
-                          fill
-                          className="object-cover"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                     </div>

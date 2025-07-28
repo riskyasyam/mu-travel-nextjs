@@ -63,10 +63,10 @@ const TestimonialSection = () => {
           viewport={{ once: true, amount: 0.5 }}
           variants={fadeUpVariant}
         >
-          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-6">
             Testimoni Jamaah.
           </h2>
-          <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+          <p className="font-serif text-base font-medium bg-gradient-to-r from-[#EAC84C] to-[#D4802A] bg-clip-text text-transparent tracking-widest uppercase">
             Dapatkan promo potongan harga menarik untuk perjalanan ibadah umroh sahabat semua.
           </p>
         </motion.div>
@@ -93,8 +93,7 @@ const TestimonialSection = () => {
                       <img
                         src={testi.foto_url}
                         alt={testi.deskripsiTestimoni || 'Testimoni MU Travel'}
-                        fill
-                        className="object-contain bg-black"
+                        className="w-full h-full object-contain bg-black"
                       />
                     </div>
                   </div>

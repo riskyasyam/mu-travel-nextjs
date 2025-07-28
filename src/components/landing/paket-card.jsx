@@ -17,12 +17,11 @@ const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 flex flex-col">
-      <div className="relative w-full h-48 bg-gray-200 rounded-t-xl">
+      <div className="w-full h-48 bg-gray-200 rounded-t-xl overflow-hidden">
         <img
           src={paket.foto_url}
           alt={`Foto ${paket.namaPaket}`}
-          fill
-          className="object-cover rounded-t-xl" // <-- KEMBALIKAN KE SINI
+          className="w-full h-full object-cover"
         />
       </div>
       <div className="p-5 flex flex-col flex-grow">
