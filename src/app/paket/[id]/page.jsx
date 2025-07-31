@@ -84,7 +84,7 @@ export default function PaketDetailPage({ params }) {
             <div className="sticky top-28">
               <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
                 <Image
-                  src={paket.fotoUrl}
+                  src={paket.foto_url}
                   alt={`Foto utama ${paket.namaPaket}`}
                   fill
                   className="object-cover"
@@ -104,7 +104,7 @@ export default function PaketDetailPage({ params }) {
               </div>
 
               <p className="text-4xl font-bold text-gray-800">
-                Rp {paket.harga.toLocaleString('id-ID')}
+                Rp {Number(paket.harga).toLocaleString('id-ID')}
               </p>
 
               <div className="text-sm text-gray-600 space-y-2 border-t pt-6">
