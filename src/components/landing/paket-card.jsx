@@ -53,7 +53,7 @@ const logoPath = airlineLogos[airlineName] || '/images/airlines/default-airline.
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-500">Harga mulai</p>
-            <p className="text-lg font-bold text-orange-500">Rp {paket.harga.toLocaleString('id-ID')}</p>
+            <p className="text-lg font-bold text-orange-500">Rp {Number(paket.harga).toLocaleString('id-ID')}</p>
           </div>
         </div>
 
