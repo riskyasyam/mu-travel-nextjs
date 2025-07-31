@@ -39,7 +39,7 @@ const FounderSection = () => {
             className="relative w-80 h-[450px] md:w-96 md:h-[540px] shadow-2xl rounded-2xl -mx-8 z-10 mx-auto"
           >
             <Image
-              src="/images/kacab.jpg"
+              src="/images/bu_irma.jpg"
               alt="Kepala Cabang"
               fill
               className="object-cover rounded-2xl"
