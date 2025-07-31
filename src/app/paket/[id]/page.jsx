@@ -83,7 +83,7 @@ export default function PaketDetailPage({ params }) {
             {/* KOLOM KIRI: GAMBAR */}
             <div className="sticky top-28">
               <div className="relative aspect-square w-full rounded-lg overflow-hidden shadow-lg">
-                <Image
+                <img
                   src={paket.foto_url}
                   alt={`Foto utama ${paket.namaPaket}`}
                   fill
